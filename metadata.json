@@ -1,0 +1,7 @@
+{
+  "name": "ABFIT Trainning versão 1.0",
+  "description": "Assessoria de Treinamento Físico por André Brito.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

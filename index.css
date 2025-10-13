@@ -1,0 +1,410 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #000;
+    color: white !important; /* Forçar texto branco globalmente */
+}
+
+/* Forçar todos os elementos de texto comuns a serem brancos */
+p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
+    color: white !important;
+}
+
+/* Estilo para placeholders */
+::placeholder {
+  color: #d1d5db !important; /* Tailwind gray-300 */
+  opacity: 1; /* Firefox */
+}
+::-ms-input-placeholder { /* Edge */
+  color: #d1d5db !important;
+}
+
+#appContainer {
+    /* Background properties moved to .screen to fix transition glitch */
+}
+
+.logo-text {
+    font-weight: 800;
+    letter-spacing: -0.05em;
+}
+
+.screens-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: #000000;
+    background-image: linear-gradient(to bottom, #000000, #991b1b);
+    background-attachment: fixed;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+    display: block;
+}
+
+.screen-enter-from-right {
+    transform: translateX(100%);
+}
+
+.screen-exit-to-left {
+    transform: translateX(-100%);
+}
+
+.screen-enter-from-left {
+    transform: translateX(-100%);
+}
+
+.screen-exit-to-right {
+    transform: translateX(100%);
+}
+
+#splashScreen {
+    background-image: linear-gradient(to bottom, #000000, #991b1b);
+    background-attachment: fixed;
+}
+
+#splashScreen.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.modal {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal-content {
+    transition: transform 0.3s ease-in-out;
+}
+
+.loader {
+    border: 4px solid #4b5563;
+    border-top: 4px solid #14b8a6; /* teal-500 */
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Estilos específicos do app existente */
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white !important;
+}
+
+.calendar-day:hover {
+    transform: scale(1.05);
+}
+
+.calendar-day.treino-A {
+    background-color: #3b82f6;
+    color: white !important;
+}
+
+.calendar-day.treino-B {
+    background-color: #10b981;
+    color: white !important;
+}
+
+.calendar-day.treino-corrida {
+    background-color: #f97316; /* orange-500 */
+    color: white !important;
+}
+
+.calendar-day.treino-corrida-completed {
+    background-color: #22c55e; /* green-500 */
+    color: white !important;
+}
+
+
+.calendar-day.has-treino {
+    border: 2px solid;
+    font-weight: bold;
+}
+
+.calendar-day.empty {
+    background-color: transparent;
+    cursor: default;
+}
+
+.calendar-day.today {
+    border: 2px solid #ef4444;
+}
+
+.offline-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #ef4444;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 1000;
+    display: none;
+}
+
+/* Cores específicas para os treinos de corrida com fundo escuro */
+.running-title-tiros {
+    color: #f87171 !important;
+    background-color: #4b5563;
+}
+
+.running-title-longão {
+    color: #60a5fa !important;
+    background-color: #4b5563;
+}
+
+.running-title-fartlek {
+    color: #c4b5fd !important;
+    background-color: #4b5563;
+}
+
+.running-title-ritmo {
+    color: #facc15 !important;
+    background-color: #4b5563;
+}
+
+.running-title-intervalado {
+    color: #fb923c !important;
+    background-color: #4b5563;
+}
+
+/* Fundo mais escuro para melhor contraste */
+.running-session-card {
+    background-color: #374151 !important;
+}
+
+/* Estilos para o sistema de avaliação física */
+.tab-active {
+    border-bottom-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+}
+
+.physio-fieldset {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+}
+
+.physio-legend {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: white !important;
+}
+
+.data-point {
+    background-color: #374151;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.data-point-label {
+    font-size: 0.875rem;
+    color: white !important;
+}
+
+.data-point-value {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: white !important;
+}
+
+/* --- Estilos para o Rastreador Outdoor --- */
+.map-container {
+    height: 250px;
+    width: 100%;
+    border-radius: 0.75rem;
+    /* rounded-xl */
+    border: 1px solid #4b5563;
+    /* border-gray-600 */
+    background-color: #374151;
+    /* bg-gray-700 */
+}
+
+.leaflet-control-attribution {
+    display: none;
+    /* Esconde a atribuição do Leaflet */
+}
+
+.leaflet-container {
+    background: #1f2937;
+    /* Cor de fundo do mapa enquanto carrega */
+}
+
+/* === NOVOS ESTILOS === */
+.exercise-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background-color: #4b5563;
+}
+
+.exercise-card h3,
+.exercise-card p {
+    color: white !important;
+}
+
+#exercise-modal-body img {
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: #4b5563;
+}
+
+#exercise-modal-body .exercise-details p {
+    margin-bottom: 0.5rem;
+    color: white !important;
+}
+
+#exercise-modal-body .exercise-details strong {
+    color: #a5b4fc; /* indigo-300 */
+}
+
+.exercise-checkbox {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    border-color: #4b5563; /* gray-600 */
+    background-color: #374151; /* gray-700 */
+    cursor: pointer;
+}
+.exercise-checkbox:checked {
+    background-color: #16a34a; /* green-600 */
+    border-color: #15803d; /* green-700 */
+}
+
+#weather-widget .weather-item {
+    display: flex;
+    align-items: center;
+    background-color: #1f2937;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    margin-top: 4px;
+}
+
+/* Universal gray text override */
+.text-gray-300,
+.text-gray-400,
+.text-gray-500,
+.text-gray-600 {
+    color: white !important;
+}
+
+#carga-history-list::-webkit-scrollbar {
+  width: 8px;
+}
+#carga-history-list::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 4px;
+}
+#carga-history-list::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+#carga-history-list::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* === ESTILOS NUTRICIONISTA IA === */
+.energy-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.meal-card {
+    background-color: #1f2937; /* gray-800 */
+    border-left: 4px solid #ef4444; /* red-500 */
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.meal-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.meal-card-macros {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    text-align: center;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #374151; /* gray-700 */
+}
+
+.meal-card-macros div span {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.meal-card-macros div p {
+    font-weight: bold;
+}
+
+
+/* === ESTILOS BIBLIOTECA DE EXERCÍCIOS === */
+.exercise-library-card {
+    background-color: #1f2937; /* gray-800 */
+    border: 1px solid #374151; /* gray-700 */
+    border-radius: 0.75rem; /* rounded-xl */
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+.exercise-library-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+}
+.exercise-library-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    background-color: #374151;
+}
+.exercise-library-card h3 {
+    padding: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem; /* text-sm */
+    text-align: center;
+    color: white !important;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

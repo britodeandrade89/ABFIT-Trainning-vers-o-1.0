@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ABFIT Trainning</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#111827">
+    <link rel="manifest" href="data:application/manifest+json,{
+        &quot;name&quot;: &quot;ABFIT Trainning&quot;,
+        &quot;short_name&quot;: &quot;ABFIT&quot;,
+        &quot;start_url&quot;: &quot;.&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#000000&quot;,
+        &quot;theme_color&quot;: &quot;#111827&quot;,
+        &quot;description&quot;: &quot;Assessoria de Treinamento Físico por André Brito.&quot;,
+        &quot;icons&quot;: [
+            { &quot;src&quot;: &quot;https://i.ibb.co/L06f36R/logo-ab-fit-192.png&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot; },
+            { &quot;src&quot;: &quot;https://i.ibb.co/P9T5YQJ/logo-ab-fit-512.png&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot; }
+        ]
+    }">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ABFIT Trainning">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/L06f36R/logo-ab-fit-192.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Leaflet.js for GPS Tracking -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="index.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai"
+      }
+    }
+    </script>
+</head>
+
+<body class="overscroll-none">
+
+    <!-- ======================= SPLASH SCREEN ======================= -->
+    <div id="splashScreen" class="w-full h-screen flex flex-col items-center justify-center">
+        <div class="text-center">
+            <h1 class="font-black text-8xl tracking-tighter">
+                <span class="text-red-600">AB</span><span class="text-white">FIT</span>
+            </h1>
+            <h2 class="text-5xl font-bold text-white tracking-wider -mt-2">Trainning</h2>
+        </div>
+        <div class="absolute bottom-8 text-center">
+            <p class="text-gray-400 text-sm">Desenvolvido por André Brito</p>
+            <p class="text-gray-500 text-xs mt-1">Versão 1.0</p>
+        </div>
+    </div>
+
+    <!-- ======================= APP CONTAINER ======================= -->
+    <div id="appContainer" class="hidden h-screen flex flex-col max-w-lg mx-auto">
+        <main class="flex-grow screens-wrapper">
+             <!-- ======================= TELA DE LOGIN ======================= -->
+            <div id="loginScreen" class="screen p-6 flex flex-col justify-center">
+                <div class="text-center mb-8">
+                    <h1 class="font-black text-6xl tracking-tighter">
+                        <span class="text-red-600">AB</span><span class="text-white">FIT</span>
+                    </h1>
+                    <h2 class="text-3xl font-bold text-white tracking-wider -mt-1">Trainning</h2>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-white font-bold text-xl mb-4 text-center">Acesse seu Perfil</h3>
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="login-email" class="block text-sm font-medium text-white mb-1">Email</label>
+                            <input type="email" id="login-email" required placeholder="seuemail@exemplo.com"
+                                class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <button id="login-btn" type="submit"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition shadow-lg shadow-red-500/20">
+                            Entrar
+                        </button>
+                        <div id="login-error" class="text-red-500 text-center text-sm mt-3 h-4"></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ======================= TELA PERFIL DO ALUNO ======================= -->
+            <div id="studentProfileScreen" class="screen p-6">
+                <header class="flex items-start justify-between pt-8 pb-4">
+                    <div id="user-greeting">
+                        <!-- Populated by JS -->
+                    </div>
+                     <div class="flex items-center gap-4">
+                        <div id="weather-widget" class="text-right">
+                            <!-- Populated by JS -->
+                        </div>
+                        <button id="logout-btn" class="p-2 rounded-full hover:bg-gray-700 text-white hover:text-white">
+                            <i data-feather="log-out"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <div id="student-profile-info"
+                    class="flex items-center p-4 bg-gray-800 border border-gray-700 rounded-xl mb-6"></div>
+
+                <div id="student-profile-buttons" class="grid grid-cols-3 gap-4 mb-6"></div>
+
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <div id="calendar-header" class="flex justify-between items-center mb-4">
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
+                                data-feather="chevron-left" class="text-white"></i></button>
+                        <h2 id="calendar-month-year" class="font-bold text-lg text-white">Setembro 2025</h2>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-700"><i
+                                data-feather="chevron-right" class="text-white"></i></button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs text-white mb-2">
+                        <div>D</div>
+                        <div>S</div>
+                        <div>T</div>
+                        <div>Q</div>
+                        <div>Q</div>
+                        <div>S</div>
+                        <div>S</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                </div>
+                
+                <div class="text-center pt-8 pb-4">
+                    <p class="text-xs">Versão 1.0</p>
+                    <p class="text-xs">Desenvolvido por André Brito</p>
+                </div>
+            </div>
+
+            <!-- ======================= TELA DE TREINO ======================= -->
+            <div id="trainingScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="training-content-wrapper" class="space-y-3 pb-24"></div>
+            </div>
+            
+            <!-- ======================= TELA DE PERIODIZAÇÃO ======================= -->
+            <div id="periodizationScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Periodização</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="periodization-content-wrapper" class="space-y-4 pb-24">
+                    <!-- Periodization table will be rendered here by JS -->
+                </div>
+            </div>
+
+            <!-- ======================= TELA DE ANÁLISE IA ======================= -->
+            <div id="aiAnalysisScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen">
+                        <i data-feather="arrow-left" class="text-white"></i>
+                    </button>
+                    <h1 class="text-2xl font-bold text-white">Análise de Performance</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-4 pb-24 text-center">
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                        <i data-feather="cpu" class="w-16 h-16 mx-auto mb-4 text-teal-400"></i>
+                        <h2 class="text-xl font-bold text-white mb-2">Análise com IA</h2>
+                        <p class="text-sm mb-6">Receba insights sobre sua evolução de cargas e descubra pontos de melhoria.</p>
+                        <button id="generate-analysis-btn" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition shadow-lg">
+                            <i data-feather="bar-chart-2"></i> <span>Gerar Análise</span>
+                        </button>
+                    </div>
+            
+                    <div id="ai-analysis-spinner" class="hidden text-center p-8">
+                        <div class="loader inline-block"></div>
+                        <p class="mt-4 text-white">Analisando seu progresso...</p>
+                    </div>
+            
+                    <div id="ai-analysis-result" class="hidden text-left bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-4">
+                        <!-- AI results will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+             <!-- ======================= TELA NUTRICIONISTA IA ======================= -->
+            <div id="iaNutritionistScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen">
+                        <i data-feather="arrow-left" class="text-white"></i>
+                    </button>
+                    <h1 class="text-2xl font-bold text-white">Nutricionista IA</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-6 pb-24">
+                    <!-- Balanço Energético -->
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-3">Balanço Energético Diário</h2>
+                        <div id="energy-balance-summary" class="grid grid-cols-3 gap-3 text-center">
+                            <div class="energy-card bg-green-800/50 p-3 rounded-lg">
+                                <span class="text-xs">Consumido</span>
+                                <p id="calories-in" class="font-bold text-xl">0</p>
+                                <span class="text-xs">kcal</span>
+                            </div>
+                            <div class="energy-card bg-blue-800/50 p-3 rounded-lg">
+                                <span class="text-xs">Gasto Estimado</span>
+                                <p id="calories-out" class="font-bold text-xl">0</p>
+                                <span class="text-xs">kcal</span>
+                            </div>
+                            <div class="energy-card bg-purple-800/50 p-3 rounded-lg">
+                                <span class="text-xs">Balanço</span>
+                                <p id="calories-balance" class="font-bold text-xl">0</p>
+                                <span class="text-xs">kcal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análise Nutricional -->
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-3">Análise Nutricional IA</h2>
+                        <p class="text-sm mb-4">Receba uma análise completa do seu consumo e recomendações personalizadas.</p>
+                        <button id="generate-nutrition-analysis-btn" class="w-full bg-lime-600 hover:bg-lime-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition shadow-lg">
+                            <i data-feather="pie-chart"></i> <span>Gerar Análise Nutricional</span>
+                        </button>
+                        <div id="nutrition-analysis-spinner" class="hidden text-center p-4">
+                            <div class="loader inline-block"></div>
+                            <p class="mt-2 text-white text-sm">Analisando seus dados...</p>
+                        </div>
+                        <div id="nutrition-analysis-result" class="hidden text-sm mt-4 p-4 bg-gray-900 rounded-lg"></div>
+                    </div>
+
+                    <!-- Registro de Refeições -->
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-bold text-white">Refeições de Hoje</h2>
+                            <button id="log-meal-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center space-x-2">
+                                <i data-feather="plus-circle" class="w-4 h-4"></i> <span>Registrar</span>
+                            </button>
+                        </div>
+                        <div id="todays-meals-list" class="space-y-3">
+                           <p class="text-center text-sm p-4">Nenhuma refeição registrada hoje.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= TELA DE CORRIDA ======================= -->
+            <div id="runningScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Treinos de Corrida</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="running-workouts-list" class="space-y-3 pb-24"></div>
+            </div>
+            
+            <!-- ======================= TELA BIBLIOTECA DE EXERCÍCIOS ======================= -->
+            <div id="exerciciosScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Biblioteca de Exercícios</h1>
+                    <div class="w-10"></div>
+                </header>
+                 <div class="mb-4 sticky top-0 bg-black/50 backdrop-blur-sm py-2 -mx-6 px-6 z-10">
+                     <input type="text" id="exercise-search-input" placeholder="Buscar exercício..." class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500">
+                </div>
+                <div id="exercise-library-list" class="grid grid-cols-2 gap-4 pb-24">
+                    <!-- Exercise cards will be rendered here -->
+                </div>
+            </div>
+
+            <!-- ======================= TELA DE EVOLUÇÃO ======================= -->
+            <div id="evolutionScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Evolução de Carga</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-6 pb-24">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-xl font-bold text-white mb-2">Treino A</h2>
+                        <label for="select-treino-a" class="text-sm text-white mb-2 block">Selecione o Exercício</label>
+                        <select id="select-treino-a" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg mb-4"></select>
+                        <canvas id="treinoAChart" class="w-full"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-xl font-bold text-white mb-2">Treino B</h2>
+                         <label for="select-treino-b" class="text-sm text-white mb-2 block">Selecione o Exercício</label>
+                        <select id="select-treino-b" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg mb-4"></select>
+                        <canvas id="treinoBChart" class="w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= TELA CONTROLE DE PESO ======================= -->
+            <div id="weightControlScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Controle de Peso</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-4 pb-24">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-xl font-bold text-white mb-4">Adicionar Novo Registro</h2>
+                        <div class="flex items-center gap-2">
+                            <input type="number" step="0.1" id="weight-input" placeholder="Ex: 85.5"
+                                class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg">
+                            <span class="font-semibold text-white">kg</span>
+                            <button id="save-weight-btn"
+                                class="bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors">Salvar</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-xl font-bold text-white mb-4">Evolução do Peso</h2>
+                        <canvas id="weightChart" class="w-full"></canvas>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                        <h2 class="text-xl font-bold text-white mb-4">Histórico de Peso</h2>
+                        <div id="weight-history-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= TELA AVALIAÇÃO FÍSICA ======================= -->
+            <div id="physioAssessmentScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Avaliação Física</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-4 pb-24">
+                    <!-- Navegação por abas -->
+                    <nav class="border-b border-gray-700">
+                        <div class="flex space-x-8">
+                            <button id="tab-professor"
+                                class="py-4 px-1 border-b-2 font-medium text-lg border-transparent text-white hover:text-blue-500 focus:outline-none tab-active">
+                                <i class="fas fa-user-tie mr-2"></i> Professor
+                            </button>
+                            <button id="tab-aluno"
+                                class="py-4 px-1 border-b-2 font-medium text-lg border-transparent text-white hover:text-blue-500 focus:outline-none">
+                                <i class="fas fa-user-graduate mr-2"></i> Aluno
+                            </button>
+                        </div>
+                    </nav>
+
+                    <!-- VISÃO DO PROFESSOR -->
+                    <div id="view-professor">
+                        <!-- Lista de Alunos e Ações -->
+                        <div id="professor-dashboard">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-semibold text-white">Painel do Professor</h2>
+                                <button id="btn-add-aluno"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                                    <i class="fas fa-user-plus mr-2"></i> Adicionar Aluno
+                                </button>
+                            </div>
+
+                            <div id="loader" class="text-center p-8">
+                                <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+                                <p class="mt-2 text-white">Carregando alunos...</p>
+                            </div>
+
+                            <div id="lista-alunos" class="hidden grid grid-cols-1 gap-4">
+                                <!-- Cards de alunos serão inseridos aqui pelo JS -->
+                            </div>
+                            <div id="no-alunos-message"
+                                class="hidden text-center p-8 bg-gray-800 rounded-lg shadow-md">
+                                <i class="fas fa-users-slash text-4xl text-white mb-4"></i>
+                                <h3 class="text-xl font-semibold text-white">Nenhum aluno encontrado</h3>
+                                <p class="text-white">Adicione seu primeiro aluno para começar a registrar as
+                                    avaliações.</p>
+                            </div>
+                        </div>
+
+                        <!-- Formulário de Nova Avaliação -->
+                        <div id="form-avaliacao" class="hidden">
+                            <div class="flex items-center mb-6">
+                                <button id="btn-back-to-dashboard"
+                                    class="mr-4 bg-gray-700 hover:bg-gray-600 p-2 rounded-full text-white"><i
+                                        class="fas fa-arrow-left"></i></button>
+                                <h2 class="text-2xl font-semibold text-white">Nova Avaliação para <span
+                                        id="form-aluno-nome" class="text-blue-400"></span></h2>
+                            </div>
+
+                            <form id="avaliacao-form" class="space-y-6 bg-gray-800 p-6 rounded-2xl shadow-xl">
+                                <!-- Seção Dados Básicos -->
+                                <fieldset class="physio-fieldset">
+                                    <legend class="physio-legend">Dados Básicos</legend>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div><label for="data" class="block text-sm font-medium text-white">Data da
+                                                Avaliação</label><input type="date" id="data" required
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div><label for="peso" class="block text-sm font-medium text-white">Peso
+                                                Corporal (kg)</label><input type="number" step="0.1" id="peso" required
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div><label for="altura" class="block text-sm font-medium text-white">Altura
+                                                (cm)</label><input type="number" step="0.1" id="altura" required
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <!-- Seção Dobras Cutâneas -->
+                                <fieldset class="physio-fieldset">
+                                    <legend class="physio-legend">Dobras Cutâneas (mm) - Protocolo Pollock 3</legend>
+                                    <div id="skinfold-fields-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <!-- Campos dinâmicos baseados no sexo -->
+                                        <div class="skinfold-field-wrapper" data-gender="Masculino"><label
+                                                for="dc_peitoral"
+                                                class="block text-sm font-medium text-white">Peitoral</label><input
+                                                type="number" step="0.1" id="dc_peitoral"
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div class="skinfold-field-wrapper" data-gender="Masculino"><label
+                                                for="dc_abdominal"
+                                                class="block text-sm font-medium text-white">Abdominal</label><input
+                                                type="number" step="0.1" id="dc_abdominal"
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div class="skinfold-field-wrapper" data-gender="Feminino"><label
+                                                for="dc_tricipital"
+                                                class="block text-sm font-medium text-white">Tricipital</label><input
+                                                type="number" step="0.1" id="dc_tricipital"
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div class="skinfold-field-wrapper" data-gender="Feminino"><label
+                                                for="dc_suprailiaca"
+                                                class="block text-sm font-medium text-white">Suprailíaca</label><input
+                                                type="number" step="0.1" id="dc_suprailiaca"
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div class="skinfold-field-wrapper" data-gender="Masculino Feminino"><label
+                                                for="dc_coxa"
+                                                class="block text-sm font-medium text-white">Coxa</label><input
+                                                type="number" step="0.1" id="dc_coxa"
+                                                class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md py-2 px-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <div class="flex justify-end pt-4">
+                                    <button type="submit" id="btn-salvar-avaliacao"
+                                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                                        <i class="fas fa-save mr-2"></i> Salvar Avaliação
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Visualização de Dados do Aluno -->
+                        <div id="view-aluno-data" class="hidden">
+                            <!-- Conteúdo preenchido pelo JS -->
+                        </div>
+                    </div>
+
+                    <!-- VISÃO DO ALUNO -->
+                    <div id="view-aluno" class="hidden">
+                        <div id="aluno-login-screen">
+                            <h2 class="text-2xl font-semibold text-white mb-4">Selecione seu nome</h2>
+                            <select id="aluno-selector"
+                                class="block w-full max-w-md bg-gray-700 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option>Carregando...</option>
+                            </select>
+                        </div>
+                        <div id="aluno-dashboard" class="hidden">
+                            <!-- Conteúdo do dashboard do aluno preenchido pelo JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= INÍCIO DAS TELAS DE RASTREAMENTO OUTDOOR ======================= -->
+
+            <!-- TELA DE SELEÇÃO DE ATIVIDADE OUTDOOR -->
+            <div id="outdoorSelectionScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
+                        data-target="studentProfileScreen"><i data-feather="arrow-left"
+                            class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Treino Outdoor</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="p-4 bg-gray-800 text-center rounded-xl border border-gray-700 mb-6">
+                    <h2 class="text-xl font-bold text-white">ABFIT Outdoor</h2>
+                    <p class="text-white">Sua jornada começa aqui. Escolha sua atividade.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button
+                        class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
+                        data-activity="Caminhada outdoor">
+                        <i class="fas fa-walking text-3xl text-blue-400"></i>
+                        <span class="font-semibold">Caminhada</span>
+                    </button>
+                    <button
+                        class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
+                        data-activity="Corrida outdoor">
+                        <i class="fas fa-running text-3xl text-blue-400"></i>
+                        <span class="font-semibold">Corrida</span>
+                    </button>
+                    <button
+                        class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
+                        data-activity="Ciclismo Outdoor">
+                        <i class="fas fa-biking text-3xl text-blue-400"></i>
+                        <span class="font-semibold">Ciclismo</span>
+                    </button>
+                    <button
+                        class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
+                        data-activity="Remo Outdoor">
+                        <i class="fas fa-ship text-3xl text-blue-400"></i>
+                        <span class="font-semibold">Remo</span>
+                    </button>
+                </div>
+                <button id="outdoorHistoryBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition mt-6">
+                    <i class="fas fa-history"></i><span>Ver Histórico</span>
+                </button>
+            </div>
+
+            <!-- TELA DO RASTREADOR GPS -->
+            <div id="outdoorTrackerScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
+                        data-target="outdoorSelectionScreen"><i data-feather="arrow-left"
+                            class="text-white"></i></button>
+                    <h1 id="outdoorActivityTitle" class="text-2xl font-bold text-white">Corrida</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="outdoorMap" class="map-container mb-4"></div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Tempo</h2>
+                        <p id="outdoorTime" class="text-xl font-bold text-white">00:00:00</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Distância</h2>
+                        <p id="outdoorDistance" class="text-xl font-bold text-white">0.00 km</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Ritmo</h2>
+                        <p id="outdoorPace" class="text-xl font-bold text-white">--:-- /km</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Velocidade</h2>
+                        <p id="outdoorSpeed" class="text-xl font-bold text-white">0.0 km/h</p>
+                    </div>
+                </div>
+                <div id="outdoorExtraMetrics" class="grid grid-cols-2 gap-3 mb-4" style="display: none;">
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Ritmo Médio</h2>
+                        <p id="outdoorAvgPace" class="text-xl font-bold text-white">--:-- /km</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Veloc. Média</h2>
+                        <p id="outdoorAvgSpeed" class="text-xl font-bold text-white">0.0 km/h</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Elevação</h2>
+                        <p id="outdoorElevation" class="text-xl font-bold text-white">0 m</p>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg text-center">
+                        <h2 class="text-sm text-white">Sens. Térmica</h2>
+                        <p id="outdoorFeelsLikeTemp" class="text-xl font-bold text-white">-- °C</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <button id="outdoorStartBtn"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition"><i
+                            class="fas fa-play"></i><span>Iniciar</span></button>
+                    <button id="outdoorStopBtn"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition disabled:opacity-50"
+                        disabled><i class="fas fa-stop"></i><span>Finalizar</span></button>
+                </div>
+            </div>
+
+            <!-- TELA DE HISTÓRICO OUTDOOR -->
+            <div id="outdoorHistoryScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
+                        data-target="outdoorSelectionScreen"><i data-feather="arrow-left"
+                            class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Histórico Outdoor</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div id="outdoorHistoryList" class="space-y-3 pb-24">
+                    <!-- Histórico será inserido aqui -->
+                </div>
+            </div>
+
+            <!-- TELA DE DETALHES DO TREINO OUTDOOR -->
+            <div id="outdoorDetailScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
+                        data-target="outdoorHistoryScreen"><i data-feather="arrow-left"
+                            class="text-white"></i></button>
+                    <h1 id="outdoorDetailTitle" class="text-2xl font-bold text-white">Detalhes</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="pb-24 space-y-4">
+                    <div id="outdoorDetailMap" class="map-container"></div>
+                    <img id="outdoorDetailPhoto" src="" alt="Foto do Treino" class="w-full rounded-lg object-cover"
+                        style="display: none;" />
+                    <div id="outdoorDetailStats" class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
+                        <!-- Detalhes do treino aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= FIM DAS TELAS DE RASTREAMENTO OUTDOOR ======================= -->
+
+        </main>
+
+        <!-- ======================= BOTTOM NAVIGATION ======================= -->
+        <footer id="bottom-nav" class="flex-shrink-0 border-t border-gray-700">
+            <div class="flex justify-around items-center h-20">
+                <button class="nav-btn text-red-500 flex flex-col items-center space-y-1"
+                    data-target="studentProfileScreen"><i data-feather="home"></i><span
+                        class="text-xs font-semibold">INÍCIO</span></button>
+                <button class="nav-btn text-white hover:text-white flex flex-col items-center space-y-1"
+                    data-target="evolutionScreen"><i data-feather="trending-up"></i><span
+                        class="text-xs font-semibold">PROGRESSO</span></button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ======================= MODAIS ======================= -->
+    <div class="offline-indicator" id="offlineIndicator">🔴 OFFLINE</div>
+
+    <div id="exerciseDetailModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="exercise-modal-content">
+            <button id="closeExerciseModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
+            <div id="exercise-modal-body">
+                <!-- Content is now dynamic for editing -->
+                <img id="modal-exercise-img" src="" alt="Exercise Image" class="w-full h-40 object-cover rounded-lg mb-4 bg-gray-700">
+                <h3 id="modal-exercise-name" class="text-2xl font-bold mb-4 text-white">Exercise Name</h3>
+
+                <div id="modal-exercise-method" class="mb-4 p-3 bg-gray-900 rounded-lg border border-gray-700">
+                    <h4 class="font-semibold text-sm text-blue-400 mb-1">Método de Treino Atual</h4>
+                    <p class="text-white text-sm"></p>
+                </div>
+                
+                <form id="edit-carga-form">
+                    <div class="mb-4">
+                        <label for="carga-input" class="block text-sm font-medium text-white mb-2">Carga Atual (kg)</label>
+                        <input type="number" step="0.5" id="carga-input" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 50.5">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
+                        <i data-feather="save"></i> <span>Salvar Nova Carga</span>
+                    </button>
+                </form>
+    
+                <div class="mt-6">
+                    <h4 class="text-lg font-semibold mb-2 text-white">Histórico de Carga</h4>
+                    <div id="carga-history-list" class="space-y-2 max-h-32 overflow-y-auto">
+                        <!-- History will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Registro de Corrida -->
+    <div id="runningLogModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="running-log-modal-content">
+            <button id="closeRunningLogModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
+            <h3 class="text-2xl font-bold mb-2 text-white">Registrar Corrida</h3>
+            <p id="running-log-date" class="text-sm mb-4"></p>
+            <form id="running-log-form">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="running-distance" class="block text-sm font-medium text-white mb-2">Distância (km)</label>
+                        <input type="text" id="running-distance" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 5,25" required>
+                    </div>
+                    <div>
+                        <label for="running-time" class="block text-sm font-medium text-white mb-2">Tempo (minutos)</label>
+                        <input type="text" id="running-time" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 30" required>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
+                    <i data-feather="save"></i> <span>Salvar Treino</span>
+                </button>
+            </form>
+            <div class="mt-6 border-t border-gray-700 pt-4">
+                 <h4 class="text-lg font-semibold mb-2 text-white">Resumo do Desempenho</h4>
+                 <div id="running-performance-summary" class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <span class="text-xs">Ritmo Médio</span>
+                        <p id="summary-pace" class="font-bold text-xl">--:--</p>
+                        <span class="text-xs">/km</span>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <span class="text-xs">Veloc. Média</span>
+                        <p id="summary-speed" class="font-bold text-xl">0.0</p>
+                        <span class="text-xs">km/h</span>
+                    </div>
+                     <div class="bg-gray-700 p-3 rounded-lg col-span-2">
+                        <span class="text-xs">Gasto Calórico Estimado</span>
+                        <p id="summary-calories" class="font-bold text-xl">0</p>
+                        <span class="text-xs">kcal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal de Registro de Refeição -->
+    <div id="mealLogModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="meal-log-modal-content">
+            <button id="closeMealLogModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
+            <h3 class="text-2xl font-bold mb-4 text-white">Registrar Refeição</h3>
+            <form id="meal-log-form">
+                <div class="mb-4">
+                    <label for="meal-type" class="block text-sm font-medium text-white mb-2">Tipo de Refeição</label>
+                    <select id="meal-type" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg">
+                        <option>Café da Manhã</option>
+                        <option>Almoço</option>
+                        <option>Jantar</option>
+                        <option>Lanche</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="meal-description" class="block text-sm font-medium text-white mb-2">O que você comeu?</label>
+                    <textarea id="meal-description" rows="4" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 1 filé de frango grelhado (150g), 1 xícara de arroz branco, salada de alface e tomate."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
+                    <i data-feather="cpu"></i> <span>Analisar e Adicionar</span>
+                </button>
+                <div id="meal-analysis-spinner" class="hidden text-center p-4">
+                    <div class="loader inline-block"></div>
+                    <p class="mt-2 text-white text-sm">Analisando refeição...</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Aluno (Avaliação Física) -->
+    <div id="modal-add-aluno" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-95 opacity-0"
+            id="modal-add-aluno-content">
+            <h3 class="text-2xl font-bold mb-6 text-white">Novo Aluno</h3>
+            <form id="form-novo-aluno">
+                <div class="mb-4">
+                    <label for="nome-aluno" class="block text-sm font-medium text-white">Nome Completo</label>
+                    <input type="text" id="nome-aluno" required
+                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label for="sexo-aluno" class="block text-sm font-medium text-white">Sexo</label>
+                    <select id="sexo-aluno" required
+                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="nascimento-aluno" class="block text-sm font-medium text-white">Data de
+                        Nascimento</label>
+                    <input type="date" id="nascimento-aluno" required
+                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="btn-cancel-modal"
+                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
+                    <button type="submit" id="btn-salvar-aluno"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><i
+                            class="fas fa-save mr-2"></i>Salvar Aluno</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Resumo do Treino Outdoor -->
+    <div id="outdoorSummaryModal"
+        class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="modal-content bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 text-white transform opacity-0 scale-95">
+            <h2 class="text-2xl font-bold mb-4 text-center">Treino Finalizado!</h2>
+            <div id="outdoorSummaryStats" class="text-left mb-4 space-y-1">
+                <!-- Stats do resumo aqui -->
+            </div>
+            <div class="photo-upload">
+                <label for="outdoorPhotoInput"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition cursor-pointer">
+                    <i class="fas fa-camera"></i> <span>Adicionar uma foto</span>
+                </label>
+                <input type="file" id="outdoorPhotoInput" accept="image/*" class="hidden">
+                <img id="outdoorPhotoPreview" src="" alt="Prévia da foto" class="w-full rounded-lg mt-4 object-cover"
+                    style="display: none; max-height: 150px;" />
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <button id="outdoorSaveBtn"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition"><i
+                        class="fas fa-save"></i> <span>Salvar</span></button>
+                <button id="outdoorDiscardBtn"
+                    class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition"><i
+                        class="fas fa-trash-alt"></i> <span>Descartar</span></button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+    <script type="module" src="index.tsx"></script>
+</body>
+
+</html>
