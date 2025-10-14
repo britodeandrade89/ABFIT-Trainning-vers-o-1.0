@@ -515,6 +515,7 @@ function renderStudentProfile(email) {
     });
 
     renderCalendar(email);
+    renderTrainingHistory(email);
     updateWeather();
 }
 
@@ -539,25 +540,41 @@ function renderCalendar(email) {
     }
 
     const userRunningWorkouts = database.userRunningWorkouts[email] || [];
+    
+    // Helper to check if a workout type was completed on a specific date
+    const isWorkoutCompleted = (workoutDateStr, workoutType) => {
+        const exercises = workoutType === 'A' 
+            ? database.trainingPlans.treinosA[email] 
+            : database.trainingPlans.treinosB[email];
+        
+        if (!exercises || exercises.length === 0) return false;
+
+        const checkedInCount = exercises.filter(ex => ex.checkIns && ex.checkIns.includes(workoutDateStr)).length;
+        // A workout is considered complete only if all its exercises are checked in.
+        return checkedInCount > 0 && checkedInCount === exercises.length;
+    };
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dayOfWeek = date.getDay();
+        const dateString = new Date(Date.UTC(year, month, day)).toISOString().split('T')[0];
+        
         let classes = 'calendar-day';
-        let workoutType = '';
 
-        if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) { // Segunda, Quarta e Sexta
-            classes += ' treino-A';
-            workoutType = 'A';
-        } else if (dayOfWeek === 2 || dayOfWeek === 4 || dayOfWeek === 6) { // Terça, Quinta e Sábado
-            classes += ' treino-B';
-            workoutType = 'B';
-        }
+        const completedA = isWorkoutCompleted(dateString, 'A');
+        const completedB = isWorkoutCompleted(dateString, 'B');
 
         const runningWorkout = userRunningWorkouts.find(w => {
             const workoutDate = new Date(w.date);
             return workoutDate.getUTCDate() === day && workoutDate.getUTCMonth() === month && workoutDate.getUTCFullYear() === year;
         });
+
+        if (completedA && completedB) {
+            classes += ' treino-A-B-completed';
+        } else if (completedA) {
+            classes += ' treino-A-completed';
+        } else if (completedB) {
+            classes += ' treino-B-completed';
+        }
 
         if (runningWorkout) {
              classes += runningWorkout.completed ? ' treino-corrida-completed' : ' treino-corrida';
@@ -567,7 +584,7 @@ function renderCalendar(email) {
             classes += ' today';
         }
 
-        calendarGrid.innerHTML += `<div class="${classes}" data-day="${day}" data-workout="${workoutType}">${day}</div>`;
+        calendarGrid.innerHTML += `<div class="${classes}" data-day="${day}">${day}</div>`;
     }
 }
 
@@ -579,6 +596,81 @@ document.getElementById('next-month-btn').addEventListener('click', () => {
     calendarDate.setMonth(calendarDate.getMonth() + 1);
     renderCalendar(getCurrentUser());
 });
+
+function renderTrainingHistory(email) {
+    const container = document.getElementById('training-history-container');
+    container.innerHTML = '';
+
+    const treinosA = database.trainingPlans.treinosA[email] || [];
+    const treinosB = database.trainingPlans.treinosB[email] || [];
+    
+    // Fix: Explicitly typed `allCheckInsByDate` to resolve 'property does not exist on type unknown' errors when accessing properties `A` and `B`.
+    const allCheckInsByDate: Record<string, { A: Set<string>, B: Set<string> }> = {};
+
+    treinosA.forEach(ex => {
+        (ex.checkIns || []).forEach(date => {
+            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
+            allCheckInsByDate[date].A.add(ex.name);
+        });
+    });
+    
+    treinosB.forEach(ex => {
+        (ex.checkIns || []).forEach(date => {
+            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
+            allCheckInsByDate[date].B.add(ex.name);
+        });
+    });
+
+    const completedWorkouts = Object.entries(allCheckInsByDate)
+        .map(([date, sets]) => {
+            const completed = [];
+            // A workout is considered complete only if all its exercises are checked in.
+            if (treinosA.length > 0 && sets.A.size === treinosA.length) {
+                completed.push('A');
+            }
+            if (treinosB.length > 0 && sets.B.size === treinosB.length) {
+                completed.push('B');
+            }
+            return { date, workouts: completed };
+        })
+        .filter(entry => entry.workouts.length > 0)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (completedWorkouts.length === 0) {
+        container.innerHTML = `
+            <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
+                <p class="text-sm">Nenhum treino de musculação registrado ainda.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let listHtml = `
+        <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
+        <div class="space-y-2">
+    `;
+
+    completedWorkouts.slice(0, 10).forEach(entry => { // Show last 10 workouts
+        const dateObj = new Date(entry.date);
+        const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC' });
+        
+        const workoutBadges = entry.workouts.map(type => 
+            `<span class="workout-badge workout-badge-${type}">Treino ${type}</span>`
+        ).join(' ');
+
+        listHtml += `
+            <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border-l-4 border-gray-600">
+                <span class="font-semibold text-sm capitalize">${formattedDate}</span>
+                <div class="flex gap-2">${workoutBadges}</div>
+            </div>
+        `;
+    });
+
+    listHtml += `</div>`;
+    container.innerHTML = listHtml;
+}
+
 
 // --- TELA BIBLIOTECA DE EXERCÍCIOS ---
 function getAllExercises() {
@@ -696,19 +788,23 @@ function processExercises(exercises, email) {
 
 function renderTrainingScreen(email, trainingType) {
     const titleEl = document.getElementById('training-title');
-    const contentWrapper = document.getElementById('training-content-wrapper');
-    contentWrapper.innerHTML = '';
+    // Prevent duplicate event listeners by replacing the wrapper element
+    let contentWrapper = document.getElementById('training-content-wrapper');
+    const newContentWrapper = contentWrapper.cloneNode(false) as HTMLElement;
+    contentWrapper.parentNode.replaceChild(newContentWrapper, contentWrapper);
+    contentWrapper = newContentWrapper;
 
     const treinos = trainingType === 'A' ? database.trainingPlans.treinosA[email] : database.trainingPlans.treinosB[email];
     const processedExercises = processExercises(treinos, email);
     
     titleEl.textContent = `Treino ${trainingType}`;
 
+    let cardsHtml = '';
     processedExercises.forEach(ex => {
         const today = new Date().toISOString().split('T')[0];
         const isChecked = ex.checkIns && ex.checkIns.includes(today);
         const originalName = ex.name.substring(ex.name.indexOf(' ') + 1);
-        const cardHtml = `
+        cardsHtml += `
             <div class="exercise-card bg-gray-800 p-3 rounded-xl border border-gray-700 flex items-center gap-3" data-exercise-name="${originalName}" data-training-type="${trainingType}">
                 <img src="${ex.img || 'https://via.placeholder.com/100x100/4b5563/FFFFFF?text=SEM+IMG'}" alt="thumbnail" class="exercise-thumbnail">
                 <div class="flex-grow">
@@ -718,8 +814,22 @@ function renderTrainingScreen(email, trainingType) {
                 <input type="checkbox" class="exercise-checkbox flex-shrink-0 w-6 h-6 rounded-md border-2 border-gray-600 bg-gray-700 focus:ring-0" ${isChecked ? 'checked' : ''}>
             </div>
         `;
-        contentWrapper.innerHTML += cardHtml;
     });
+    contentWrapper.innerHTML = cardsHtml;
+    
+    let saveBtn = document.getElementById('save-training-btn');
+    feather.replace(); // To render the new icon on the save button
+
+    const updateSaveButtonVisibility = () => {
+        const checkboxes = contentWrapper.querySelectorAll('.exercise-checkbox') as NodeListOf<HTMLInputElement>;
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        
+        if (allChecked) {
+            saveBtn.classList.remove('hidden');
+        } else {
+            saveBtn.classList.add('hidden');
+        }
+    };
    
     contentWrapper.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
@@ -731,12 +841,35 @@ function renderTrainingScreen(email, trainingType) {
 
         if ((target as HTMLInputElement).type === 'checkbox') {
             handleExerciseCheckIn(email, currentTrainingType, exerciseName, (target as HTMLInputElement).checked);
+            updateSaveButtonVisibility();
         } else {
              if (currentTrainingType === 'A' || currentTrainingType === 'B') {
                 openExerciseModal(email, currentTrainingType, exerciseName);
             }
         }
     });
+
+    const saveBtnClickHandler = () => {
+        // Data is already saved by handleExerciseCheckIn
+        alert('Treino concluído e salvo com sucesso!');
+        
+        // Refresh calendar and history on the profile screen before transitioning
+        renderCalendar(email);
+        renderTrainingHistory(email);
+
+        // Navigate back to profile
+        const currentScreen = document.getElementById('trainingScreen');
+        const targetScreen = document.getElementById('studentProfileScreen');
+        transitionScreen(currentScreen, targetScreen, 'left');
+    };
+
+    // Replace button to remove old listeners and update the reference
+    const newSaveBtn = saveBtn.cloneNode(true) as HTMLElement;
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    saveBtn = newSaveBtn; // Update the reference to the new button
+    saveBtn.addEventListener('click', saveBtnClickHandler);
+    
+    updateSaveButtonVisibility(); // Initial check on render
 }
 
 function handleExerciseCheckIn(email, trainingType, exerciseName, isChecked) {
@@ -1276,8 +1409,259 @@ async function updateWeather() {
         widget.innerHTML = '<span class="text-xs">Clima indisponível</span>';
     }
 }
+
+// --- AVALIAÇÃO FÍSICA & CÂMERA ---
+let cameraStream = null;
+let currentAlunoIdForPhoto = null;
+
+async function openCameraModal(alunoId) {
+    currentAlunoIdForPhoto = alunoId;
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('camera-stream') as HTMLVideoElement;
+    
+    modal.classList.remove('hidden');
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        video.srcObject = cameraStream;
+    } catch (err) {
+        console.error("Error accessing camera: ", err);
+        alert("Não foi possível acessar a câmera. Verifique as permissões do seu navegador.");
+        closeCameraModal();
+    }
+}
+
+function closeCameraModal() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+    }
+    cameraStream = null;
+    currentAlunoIdForPhoto = null;
+    const modal = document.getElementById('cameraModal');
+    modal.classList.add('hidden');
+}
+
+function capturePhoto() {
+    if (!currentAlunoIdForPhoto) return;
+
+    const video = document.getElementById('camera-stream') as HTMLVideoElement;
+    const canvas = document.getElementById('camera-canvas') as HTMLCanvasElement;
+    const context = canvas.getContext('2d');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    
+    const alunos = getPhysioAlunosFromStorage();
+    const alunoIndex = alunos.findIndex(a => a.id === currentAlunoIdForPhoto);
+    if (alunoIndex !== -1) {
+        alunos[alunoIndex].photo = dataUrl;
+        savePhysioAlunosToStorage(alunos);
+        
+        const photoEl = document.getElementById('physio-aluno-photo') as HTMLImageElement;
+        if (photoEl) {
+            photoEl.src = dataUrl;
+        }
+        
+        const alunoCardPhoto = document.querySelector(`.aluno-card[data-aluno-id="${currentAlunoIdForPhoto}"] img`);
+        if (alunoCardPhoto) {
+            (alunoCardPhoto as HTMLImageElement).src = dataUrl;
+        }
+    }
+
+    closeCameraModal();
+}
+
+function initializePhysioAssessmentScreen() {
+    const professorView = document.getElementById('view-professor');
+    const alunoView = document.getElementById('view-aluno');
+    const professorTab = document.getElementById('tab-professor');
+    const alunoTab = document.getElementById('tab-aluno');
+    
+    const professorDashboard = document.getElementById('professor-dashboard');
+    const formAvaliacao = document.getElementById('form-avaliacao');
+    const viewAlunoData = document.getElementById('view-aluno-data');
+
+    professorTab.addEventListener('click', () => {
+        professorTab.classList.add('tab-active');
+        alunoTab.classList.remove('tab-active');
+        professorView.style.display = 'block';
+        alunoView.style.display = 'none';
+    });
+
+    alunoTab.addEventListener('click', () => {
+        alunoTab.classList.add('tab-active');
+        professorTab.classList.remove('tab-active');
+        alunoView.style.display = 'block';
+        professorView.style.display = 'none';
+        renderAlunoViewSelector();
+    });
+
+    professorTab.click();
+    
+    const addAlunoModal = document.getElementById('modal-add-aluno');
+    const addAlunoModalContent = document.getElementById('modal-add-aluno-content');
+    const addAlunoBtn = document.getElementById('btn-add-aluno');
+    const cancelAlunoBtn = document.getElementById('btn-cancel-modal');
+    const saveAlunoForm = document.getElementById('form-novo-aluno');
+
+    const openAddAlunoModal = () => {
+        addAlunoModal.classList.remove('hidden');
+        setTimeout(() => {
+            addAlunoModalContent.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+    };
+
+    const closeAddAlunoModal = () => {
+        addAlunoModalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            addAlunoModal.classList.add('hidden');
+        }, 300);
+    };
+    
+    addAlunoBtn.addEventListener('click', openAddAlunoModal);
+    cancelAlunoBtn.addEventListener('click', closeAddAlunoModal);
+    addAlunoModal.addEventListener('click', (e) => {
+        if (e.target === addAlunoModal) closeAddAlunoModal();
+    });
+
+    saveAlunoForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nome = (document.getElementById('nome-aluno') as HTMLInputElement).value;
+        const sexo = (document.getElementById('sexo-aluno') as HTMLSelectElement).value;
+        const nascimento = (document.getElementById('nascimento-aluno') as HTMLInputElement).value;
+        
+        const alunos = getPhysioAlunosFromStorage();
+        const newAluno = {
+            id: `aluno-${Date.now()}`,
+            nome,
+            sexo,
+            nascimento,
+            avaliacoes: [],
+            photo: null
+        };
+        alunos.push(newAluno);
+        savePhysioAlunosToStorage(alunos);
+        
+        (saveAlunoForm as HTMLFormElement).reset();
+        closeAddAlunoModal();
+        renderProfessorDashboard();
+    });
+    
+    document.getElementById('close-camera-modal-btn').addEventListener('click', closeCameraModal);
+    document.getElementById('capture-photo-btn').addEventListener('click', capturePhoto);
+
+    renderProfessorDashboard();
+}
+
+function renderProfessorDashboard() {
+    const alunos = getPhysioAlunosFromStorage();
+    const listaAlunosEl = document.getElementById('lista-alunos');
+    const loader = document.getElementById('loader');
+    const noAlunosMsg = document.getElementById('no-alunos-message');
+    
+    document.getElementById('professor-dashboard').style.display = 'block';
+    document.getElementById('form-avaliacao').style.display = 'none';
+    document.getElementById('view-aluno-data').style.display = 'none';
+
+    loader.style.display = 'block';
+    listaAlunosEl.style.display = 'none';
+    noAlunosMsg.style.display = 'none';
+
+    setTimeout(() => {
+        loader.style.display = 'none';
+        if (alunos.length === 0) {
+            noAlunosMsg.style.display = 'block';
+        } else {
+            listaAlunosEl.innerHTML = '';
+            alunos.forEach(aluno => {
+                const card = document.createElement('div');
+                card.className = 'aluno-card bg-gray-800 p-4 rounded-xl shadow-md flex items-center justify-between cursor-pointer hover:bg-gray-700 transition';
+                card.dataset.alunoId = aluno.id;
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <img src="${aluno.photo || 'https://via.placeholder.com/64x64/4b5563/FFFFFF?text=SEM+FOTO'}" alt="Foto do Aluno" class="w-16 h-16 rounded-full object-cover border-2 border-gray-600">
+                        <div>
+                            <h4 class="font-bold text-lg">${aluno.nome}</h4>
+                            <p class="text-sm">${aluno.avaliacoes.length} avaliações</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                `;
+                card.addEventListener('click', () => renderPhysioAlunoData(aluno.id));
+                listaAlunosEl.appendChild(card);
+            });
+            listaAlunosEl.style.display = 'grid';
+        }
+    }, 500);
+}
+
+function renderPhysioAlunoData(alunoId) {
+    const aluno = getPhysioAlunosFromStorage().find(a => a.id === alunoId);
+    if (!aluno) return;
+
+    document.getElementById('professor-dashboard').style.display = 'none';
+    document.getElementById('form-avaliacao').style.display = 'none';
+    const viewContainer = document.getElementById('view-aluno-data');
+    viewContainer.style.display = 'block';
+
+    const idade = aluno.nascimento ? new Date().getFullYear() - new Date(aluno.nascimento).getFullYear() : 'N/A';
+
+    viewContainer.innerHTML = `
+        <div class="flex items-center mb-6">
+            <button id="btn-back-to-physio-dashboard" class="mr-4 bg-gray-700 hover:bg-gray-600 p-2 rounded-full text-white"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="text-2xl font-semibold text-white">Perfil de <span class="text-blue-400">${aluno.nome}</span></h2>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-xl mb-6">
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <img id="physio-aluno-photo" src="${aluno.photo || 'https://via.placeholder.com/100x100/4b5563/FFFFFF?text=SEM+FOTO'}" alt="Foto do Aluno" class="w-24 h-24 rounded-full object-cover border-4 border-blue-500">
+                    <button id="update-photo-btn" aria-label="Atualizar foto do perfil" class="absolute bottom-0 right-0 bg-white text-gray-800 p-2 rounded-full shadow-md hover:bg-gray-200 transition">
+                        <i data-feather="camera" class="w-4 h-4" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold">${aluno.nome}</h3>
+                    <p>${aluno.sexo}</p>
+                    <p>${idade} anos</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">Histórico de Avaliações</h3>
+            <button id="btn-nova-avaliacao" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fas fa-plus mr-2"></i> Nova Avaliação</button>
+        </div>
+        <div id="assessments-history-list" class="space-y-4"></div>
+    `;
+    feather.replace();
+    renderAssessmentsHistory(aluno);
+    
+    document.getElementById('btn-back-to-physio-dashboard').addEventListener('click', renderProfessorDashboard);
+    document.getElementById('update-photo-btn').addEventListener('click', () => openCameraModal(aluno.id));
+}
+
+function renderAssessmentsHistory(aluno) {
+    const listEl = document.getElementById('assessments-history-list');
+    if (!aluno.avaliacoes || aluno.avaliacoes.length === 0) {
+        listEl.innerHTML = '<p class="text-center p-4 bg-gray-800 rounded-lg">Nenhuma avaliação registrada.</p>';
+        return;
+    }
+    listEl.innerHTML = aluno.avaliacoes.map(av => `<div class="bg-gray-800 p-4 rounded-lg">Avaliação de ${new Date(av.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</div>`).join('');
+}
+
+function renderAlunoViewSelector() {
+    const selector = document.getElementById('aluno-selector') as HTMLSelectElement;
+    const alunos = getPhysioAlunosFromStorage();
+    if (alunos.length > 0) {
+        selector.innerHTML = '<option value="">Selecione seu nome</option>' + alunos.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+    } else {
+        selector.innerHTML = '<option>Nenhum aluno cadastrado</option>';
+    }
+}
+
 // Placeholder functions for screens not yet implemented in detail
 function renderAiAnalysisScreen(email) { console.log("Rendering AI Analysis for", email); }
 function renderNutritionistScreen(email) { console.log("Rendering Nutritionist for", email); }
-function initializePhysioAssessmentScreen() { console.log("Initializing Physio Assessment"); }
 function initializeOutdoorSelectionScreen() { console.log("Initializing Outdoor Selection"); }

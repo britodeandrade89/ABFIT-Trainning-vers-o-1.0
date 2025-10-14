@@ -117,36 +117,42 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
     cursor: pointer;
     transition: all 0.2s;
     color: white !important;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .calendar-day:hover {
     transform: scale(1.05);
 }
 
-.calendar-day.treino-A {
-    background-color: #3b82f6;
+.calendar-day.treino-A-completed {
+    background-color: #2563eb; /* blue-600 */
     color: white !important;
+    font-weight: bold;
+    border: 2px solid #60a5fa; /* blue-400 */
 }
 
-.calendar-day.treino-B {
-    background-color: #10b981;
+.calendar-day.treino-B-completed {
+    background-color: #059669; /* green-600 */
     color: white !important;
+    font-weight: bold;
+    border: 2px solid #34d399; /* green-400 */
+}
+
+.calendar-day.treino-A-B-completed {
+    background: linear-gradient(135deg, #2563eb 50%, #059669 50%);
+    color: white !important;
+    font-weight: bold;
+    border: 2px solid #a5b4fc; /* indigo-300 */
 }
 
 .calendar-day.treino-corrida {
-    background-color: #f97316; /* orange-500 */
-    color: white !important;
+    border: 2px solid #f97316; /* orange-500 */
 }
 
 .calendar-day.treino-corrida-completed {
-    background-color: #22c55e; /* green-500 */
+    background-color: #f97316; /* orange-500 */
+    border-color: #fb923c; /* orange-400 */
     color: white !important;
-}
-
-
-.calendar-day.has-treino {
-    border: 2px solid;
-    font-weight: bold;
 }
 
 .calendar-day.empty {
@@ -156,6 +162,7 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
 
 .calendar-day.today {
     border: 2px solid #ef4444;
+    box-shadow: 0 0 10px #ef4444;
 }
 
 .offline-indicator {
@@ -407,4 +414,21 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* History List styles */
+.workout-badge {
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 600; /* font-semibold */
+    padding: 0.25rem 0.5rem; /* py-1 px-2 */
+    border-radius: 9999px; /* rounded-full */
+    color: white !important;
+}
+
+.workout-badge-A {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+.workout-badge-B {
+    background-color: #10b981; /* green-500 */
 }
