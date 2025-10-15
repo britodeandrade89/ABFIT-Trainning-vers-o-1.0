@@ -19,7 +19,8 @@ const database = {
         treinosB: {},
         periodizacao: {}
     },
-    userRunningWorkouts: {}
+    userRunningWorkouts: {},
+    completedWorkouts: []
 };
 
 // --- SISTEMA DE AVALIAção FÍSICA ---
@@ -61,6 +62,10 @@ const calculateBodyComposition = (avaliacao, aluno) => {
         imc: imc.toFixed(1)
     };
 };
+
+let workoutTimerInterval: number | null = null;
+let workoutStartTime: number | null = null;
+
 
 // --- OFFLINE STORAGE SYSTEM ---
 const STORAGE_KEYS = {
@@ -112,6 +117,7 @@ function initializeDatabase() {
     const savedDB = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATABASE));
     if (savedDB) {
         Object.assign(database, savedDB);
+        if (!database.completedWorkouts) database.completedWorkouts = []; // For backward compatibility
         console.log('Dados carregados do armazenamento local');
         return;
     }
@@ -323,6 +329,14 @@ function showScreen(screenId) {
 
 function transitionScreen(fromScreen, toScreen, direction = 'right') {
     if (!fromScreen || !toScreen || fromScreen === toScreen) return;
+
+    if (fromScreen.id === 'trainingScreen' && workoutTimerInterval) {
+        clearInterval(workoutTimerInterval);
+        workoutTimerInterval = null;
+        workoutStartTime = null;
+        const timerEl = document.getElementById('workout-timer');
+        if (timerEl) timerEl.textContent = '00:00';
+    }
 
     const fromRight = direction === 'right' ? 'screen-exit-to-left' : 'screen-exit-to-right';
     const fromLeft = direction === 'right' ? 'screen-enter-from-right' : 'screen-enter-from-left';
@@ -787,6 +801,23 @@ function processExercises(exercises, email) {
 
 
 function renderTrainingScreen(email, trainingType) {
+    if (workoutTimerInterval) {
+        clearInterval(workoutTimerInterval);
+    }
+    workoutStartTime = Date.now();
+    const timerEl = document.getElementById('workout-timer');
+
+    if (timerEl) {
+        timerEl.textContent = '00:00'; // Reset display initially
+        workoutTimerInterval = window.setInterval(() => {
+            if (!workoutStartTime) return;
+            const elapsedSeconds = Math.floor((Date.now() - workoutStartTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${minutes}:${seconds}`;
+        }, 1000);
+    }
+
     const titleEl = document.getElementById('training-title');
     // Prevent duplicate event listeners by replacing the wrapper element
     let contentWrapper = document.getElementById('training-content-wrapper');
@@ -850,9 +881,41 @@ function renderTrainingScreen(email, trainingType) {
     });
 
     const saveBtnClickHandler = () => {
-        // Data is already saved by handleExerciseCheckIn
-        alert('Treino concluído e salvo com sucesso!');
+        const durationInSeconds = workoutStartTime ? Math.round((Date.now() - workoutStartTime) / 1000) : 0;
         
+        // Stop timer - This will be handled by transitionScreen, but good to be explicit.
+        if (workoutTimerInterval) {
+            clearInterval(workoutTimerInterval);
+            workoutTimerInterval = null;
+            workoutStartTime = null;
+        }
+
+        // Save the completed workout data
+        const today = new Date().toISOString().split('T')[0];
+        if (!database.completedWorkouts) {
+            database.completedWorkouts = [];
+        }
+
+        const existingWorkoutIndex = (database.completedWorkouts || []).findIndex(
+            w => w.email === email && w.date === today && w.type === trainingType
+        );
+
+        if (existingWorkoutIndex > -1) {
+            database.completedWorkouts[existingWorkoutIndex].duration = durationInSeconds;
+        } else {
+            database.completedWorkouts.push({
+                email: email,
+                date: today,
+                type: trainingType,
+                duration: durationInSeconds
+            });
+        }
+        saveDatabase(database);
+        
+        const minutes = Math.floor(durationInSeconds / 60);
+        const seconds = durationInSeconds % 60;
+        alert(`Treino concluído em ${minutes}m ${seconds}s e salvo com sucesso!`);
+
         // Refresh calendar and history on the profile screen before transitioning
         renderCalendar(email);
         renderTrainingHistory(email);

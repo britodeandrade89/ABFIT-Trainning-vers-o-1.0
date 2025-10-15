@@ -153,7 +153,13 @@
                 <header class="flex items-center justify-between pt-6 pb-4">
                     <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
                             data-feather="arrow-left" class="text-white"></i></button>
-                    <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
+                    <div class="flex flex-col items-center">
+                        <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
+                        <div class="text-base text-white flex items-center justify-center gap-1">
+                            <i data-feather="clock" class="w-4 h-4"></i>
+                            <span id="workout-timer">00:00</span>
+                        </div>
+                    </div>
                     <button id="save-training-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
                         <i data-feather="check-circle" class="w-4 h-4"></i>
                         <span>Concluir</span>
