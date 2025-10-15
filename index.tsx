@@ -1,3 +1,4 @@
+
 // Fix: Add declarations for external libraries to prevent TypeScript errors.
 declare var feather: any;
 declare var L: any;
@@ -19,8 +20,7 @@ const database = {
         treinosB: {},
         periodizacao: {}
     },
-    userRunningWorkouts: {},
-    completedWorkouts: []
+    userRunningWorkouts: {}
 };
 
 // --- SISTEMA DE AVALIAção FÍSICA ---
@@ -62,10 +62,6 @@ const calculateBodyComposition = (avaliacao, aluno) => {
         imc: imc.toFixed(1)
     };
 };
-
-let workoutTimerInterval: number | null = null;
-let workoutStartTime: number | null = null;
-
 
 // --- OFFLINE STORAGE SYSTEM ---
 const STORAGE_KEYS = {
@@ -117,7 +113,6 @@ function initializeDatabase() {
     const savedDB = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATABASE));
     if (savedDB) {
         Object.assign(database, savedDB);
-        if (!database.completedWorkouts) database.completedWorkouts = []; // For backward compatibility
         console.log('Dados carregados do armazenamento local');
         return;
     }
@@ -330,14 +325,6 @@ function showScreen(screenId) {
 function transitionScreen(fromScreen, toScreen, direction = 'right') {
     if (!fromScreen || !toScreen || fromScreen === toScreen) return;
 
-    if (fromScreen.id === 'trainingScreen' && workoutTimerInterval) {
-        clearInterval(workoutTimerInterval);
-        workoutTimerInterval = null;
-        workoutStartTime = null;
-        const timerEl = document.getElementById('workout-timer');
-        if (timerEl) timerEl.textContent = '00:00';
-    }
-
     const fromRight = direction === 'right' ? 'screen-exit-to-left' : 'screen-exit-to-right';
     const fromLeft = direction === 'right' ? 'screen-enter-from-right' : 'screen-enter-from-left';
 
@@ -419,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 (Array.from(navButtons).filter(b => b !== button) as HTMLElement[]).forEach(b => b.classList.add('text-white'));
                 
                 if (targetScreenId === 'evolutionScreen') renderEvolutionScreen(getCurrentUser());
+                if (targetScreenId === 'musicScreen') renderMusicScreen();
                 
                 transitionScreen(currentScreen, targetScreen);
             }
@@ -454,6 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
             openRunningLogModal(email, workoutDate);
         }
     });
+
+    initializeMusicPlayer();
 });
 
 function renderStudentProfile(email) {
@@ -486,7 +476,7 @@ function renderStudentProfile(email) {
         <button data-target="aiAnalysisScreen" id="ai-analysis-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="cpu"></i><span class="text-xs">Análise IA</span></button>
         <button data-target="physioAssessmentScreen" id="physio-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="users"></i><span class="text-xs">Avaliação</span></button>
         <button data-target="runningScreen" id="running-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="wind"></i><span class="text-xs">Corrida</span></button>
-        <button data-target="exerciciosScreen" id="exercicios-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="book-open"></i><span class="text-xs">Exercícios</span></button>
+        <button data-target="exerciciosScreen" id="exercicios-btn" class="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="book-open"></i><span class="text-xs">Biblioteca de Exercícios</span></button>
         <button data-target="iaNutritionistScreen" id="ia-nutritionist-btn" class="bg-lime-600 hover:bg-lime-700 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="heart"></i><span class="text-xs">Nutri IA</span></button>
         <button data-target="outdoorSelectionScreen" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="sun"></i><span class="text-xs">Outdoor</span></button>
         <button data-target="periodizationScreen" id="periodization-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-2 rounded-xl flex flex-col items-center justify-center space-y-1 transition text-center"><i data-feather="calendar"></i><span class="text-xs">Periodização</span></button>
@@ -615,9 +605,42 @@ function renderTrainingHistory(email) {
     const container = document.getElementById('training-history-container');
     container.innerHTML = '';
 
-    const userCompletedWorkouts = (database.completedWorkouts || []).filter(w => w.email === email);
+    const treinosA = database.trainingPlans.treinosA[email] || [];
+    const treinosB = database.trainingPlans.treinosB[email] || [];
+    
+    // Fix: Explicitly typed `allCheckInsByDate` to resolve 'property does not exist on type unknown' errors when accessing properties `A` and `B`.
+    const allCheckInsByDate: Record<string, { A: Set<string>, B: Set<string> }> = {};
 
-    if (userCompletedWorkouts.length === 0) {
+    treinosA.forEach(ex => {
+        (ex.checkIns || []).forEach(date => {
+            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
+            allCheckInsByDate[date].A.add(ex.name);
+        });
+    });
+    
+    treinosB.forEach(ex => {
+        (ex.checkIns || []).forEach(date => {
+            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
+            allCheckInsByDate[date].B.add(ex.name);
+        });
+    });
+
+    const completedWorkouts = Object.entries(allCheckInsByDate)
+        .map(([date, sets]) => {
+            const completed = [];
+            // A workout is considered complete only if all its exercises are checked in.
+            if (treinosA.length > 0 && sets.A.size === treinosA.length) {
+                completed.push('A');
+            }
+            if (treinosB.length > 0 && sets.B.size === treinosB.length) {
+                completed.push('B');
+            }
+            return { date, workouts: completed };
+        })
+        .filter(entry => entry.workouts.length > 0)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (completedWorkouts.length === 0) {
         container.innerHTML = `
             <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
@@ -626,39 +649,24 @@ function renderTrainingHistory(email) {
         `;
         return;
     }
-
-    // Group workouts by date
-    const workoutsByDate = userCompletedWorkouts.reduce((acc, workout) => {
-        const date = workout.date;
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push({ type: workout.type, duration: workout.duration });
-        return acc;
-    }, {});
-
-    const sortedDates = Object.keys(workoutsByDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-
+    
     let listHtml = `
         <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
         <div class="space-y-2">
     `;
 
-    sortedDates.slice(0, 10).forEach(date => { // Show last 10 workout dates
-        const dateObj = new Date(date);
+    completedWorkouts.slice(0, 10).forEach(entry => { // Show last 10 workouts
+        const dateObj = new Date(entry.date);
         const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC' });
-
-        const workoutBadges = workoutsByDate[date].map(w => {
-            const minutes = Math.floor(w.duration / 60);
-            const seconds = w.duration % 60;
-            const durationStr = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
-            return `<span class="workout-badge workout-badge-${w.type}">Treino ${w.type} (${durationStr})</span>`;
-        }).join(' ');
+        
+        const workoutBadges = entry.workouts.map(type => 
+            `<span class="workout-badge workout-badge-${type}">Treino ${type}</span>`
+        ).join(' ');
 
         listHtml += `
             <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border-l-4 border-gray-600">
                 <span class="font-semibold text-sm capitalize">${formattedDate}</span>
-                <div class="flex gap-2 flex-wrap justify-end">${workoutBadges}</div>
+                <div class="flex gap-2">${workoutBadges}</div>
             </div>
         `;
     });
@@ -783,23 +791,6 @@ function processExercises(exercises, email) {
 
 
 function renderTrainingScreen(email, trainingType) {
-    if (workoutTimerInterval) {
-        clearInterval(workoutTimerInterval);
-    }
-    workoutStartTime = Date.now();
-    const timerEl = document.getElementById('workout-timer');
-
-    if (timerEl) {
-        timerEl.textContent = '00:00'; // Reset display initially
-        workoutTimerInterval = window.setInterval(() => {
-            if (!workoutStartTime) return;
-            const elapsedSeconds = Math.floor((Date.now() - workoutStartTime) / 1000);
-            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
-            const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
-            timerEl.textContent = `${minutes}:${seconds}`;
-        }, 1000);
-    }
-
     const titleEl = document.getElementById('training-title');
     // Prevent duplicate event listeners by replacing the wrapper element
     let contentWrapper = document.getElementById('training-content-wrapper');
@@ -822,7 +813,7 @@ function renderTrainingScreen(email, trainingType) {
                 <img src="${ex.img || 'https://via.placeholder.com/100x100/4b5563/FFFFFF?text=SEM+IMG'}" alt="thumbnail" class="exercise-thumbnail">
                 <div class="flex-grow">
                     <h3 class="font-bold text-md">${ex.name}</h3>
-                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Carga: ${ex.carga} kg | Rec: ${ex.recovery}</p>
+                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Rec: ${ex.recovery}</p>
                 </div>
                 <input type="checkbox" class="exercise-checkbox flex-shrink-0 w-6 h-6 rounded-md border-2 border-gray-600 bg-gray-700 focus:ring-0" ${isChecked ? 'checked' : ''}>
             </div>
@@ -863,41 +854,9 @@ function renderTrainingScreen(email, trainingType) {
     });
 
     const saveBtnClickHandler = () => {
-        const durationInSeconds = workoutStartTime ? Math.round((Date.now() - workoutStartTime) / 1000) : 0;
+        // Data is already saved by handleExerciseCheckIn
+        alert('Treino concluído e salvo com sucesso!');
         
-        // Stop timer - This will be handled by transitionScreen, but good to be explicit.
-        if (workoutTimerInterval) {
-            clearInterval(workoutTimerInterval);
-            workoutTimerInterval = null;
-            workoutStartTime = null;
-        }
-
-        // Save the completed workout data
-        const today = new Date().toISOString().split('T')[0];
-        if (!database.completedWorkouts) {
-            database.completedWorkouts = [];
-        }
-
-        const existingWorkoutIndex = (database.completedWorkouts || []).findIndex(
-            w => w.email === email && w.date === today && w.type === trainingType
-        );
-
-        if (existingWorkoutIndex > -1) {
-            database.completedWorkouts[existingWorkoutIndex].duration = durationInSeconds;
-        } else {
-            database.completedWorkouts.push({
-                email: email,
-                date: today,
-                type: trainingType,
-                duration: durationInSeconds
-            });
-        }
-        saveDatabase(database);
-        
-        const minutes = Math.floor(durationInSeconds / 60);
-        const seconds = durationInSeconds % 60;
-        alert(`Treino concluído em ${minutes}m ${seconds}s e salvo com sucesso!`);
-
         // Refresh calendar and history on the profile screen before transitioning
         renderCalendar(email);
         renderTrainingHistory(email);
@@ -1705,6 +1664,51 @@ function renderAlunoViewSelector() {
         selector.innerHTML = '<option>Nenhum aluno cadastrado</option>';
     }
 }
+
+// --- Player de Música ---
+function initializeMusicPlayer() {
+    const musicServiceButtons = document.getElementById('music-service-buttons');
+    const musicPlayerContainer = document.getElementById('music-player-container');
+    const musicPlayerIframe = document.getElementById('music-player-iframe') as HTMLIFrameElement;
+    const closeMusicPlayerBtn = document.getElementById('close-music-player-btn');
+
+    const embedUrls = {
+        spotify: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX0XUfTFmNBRM?utm_source=generator&theme=0',
+        'youtube-music': 'https://music.youtube.com/embed/playlist?list=PL_b2S-4-0I4Zi_sA-8iCRu_2agQFx_aZq',
+        deezer: 'https://widget.deezer.com/widget/dark/playlist/3155776542'
+    };
+
+    musicServiceButtons.addEventListener('click', (e) => {
+        const button = (e.target as HTMLElement).closest('.music-service-btn') as HTMLElement;
+        if (!button) return;
+        
+        const service = button.dataset.service;
+        if (service && embedUrls[service]) {
+            musicPlayerIframe.src = embedUrls[service];
+            musicPlayerContainer.classList.remove('hidden');
+            musicServiceButtons.classList.add('hidden');
+            feather.replace();
+        }
+    });
+    
+    closeMusicPlayerBtn.addEventListener('click', () => {
+        musicPlayerIframe.src = '';
+        musicPlayerContainer.classList.add('hidden');
+        musicServiceButtons.classList.remove('hidden');
+    });
+}
+
+function renderMusicScreen() {
+    const musicPlayerContainer = document.getElementById('music-player-container');
+    const musicServiceButtons = document.getElementById('music-service-buttons');
+    const musicPlayerIframe = document.getElementById('music-player-iframe') as HTMLIFrameElement;
+    
+    // Reset view to service selection
+    musicPlayerIframe.src = '';
+    musicPlayerContainer.classList.add('hidden');
+    musicServiceButtons.classList.remove('hidden');
+}
+
 
 // Placeholder functions for screens not yet implemented in detail
 function renderAiAnalysisScreen(email) { console.log("Rendering AI Analysis for", email); }

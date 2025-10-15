@@ -153,13 +153,7 @@
                 <header class="flex items-center justify-between pt-6 pb-4">
                     <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
                             data-feather="arrow-left" class="text-white"></i></button>
-                    <div class="flex flex-col items-center">
-                        <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
-                        <div class="text-base text-white flex items-center justify-center gap-1">
-                            <i data-feather="clock" class="w-4 h-4"></i>
-                            <span id="workout-timer">00:00</span>
-                        </div>
-                    </div>
+                    <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
                     <button id="save-training-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
                         <i data-feather="check-circle" class="w-4 h-4"></i>
                         <span>Concluir</span>
@@ -504,6 +498,47 @@
                 </div>
             </div>
 
+            <!-- ======================= TELA DE MÚSICA ======================= -->
+            <div id="musicScreen" class="screen p-6">
+                <header class="flex items-center justify-between pt-6 pb-4">
+                    <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
+                            data-feather="arrow-left" class="text-white"></i></button>
+                    <h1 class="text-2xl font-bold text-white">Player de Música</h1>
+                    <div class="w-10"></div>
+                </header>
+                <div class="space-y-6 pb-24">
+                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
+                        <h2 class="text-lg font-bold text-white mb-1">Ouça enquanto treina</h2>
+                        <p class="text-sm">Conecte seu serviço de streaming favorito.</p>
+                    </div>
+            
+                    <div id="music-service-buttons" class="grid grid-cols-1 gap-4">
+                        <button class="music-service-btn" data-service="spotify">
+                            <i class="fab fa-spotify"></i>
+                            <span>Spotify</span>
+                        </button>
+                        <button class="music-service-btn" data-service="youtube-music">
+                            <i class="fab fa-youtube"></i>
+                            <span>YouTube Music</span>
+                        </button>
+                        <button class="music-service-btn" data-service="deezer">
+                            <i class="fab fa-deezer"></i>
+                            <span>Deezer</span>
+                        </button>
+                    </div>
+                    
+                    <div id="music-player-container" class="hidden">
+                        <div class="flex justify-end mb-2">
+                             <button id="close-music-player-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-full text-xs flex items-center gap-1">
+                                <i data-feather="x" class="w-3 h-3"></i>
+                                <span>Fechar Player</span>
+                            </button>
+                        </div>
+                        <iframe id="music-player-iframe" class="w-full rounded-xl" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+                    </div>
+                </div>
+            </div>
+            
             <!-- ======================= INÍCIO DAS TELAS DE RASTREAMENTO OUTDOOR ======================= -->
 
             <!-- TELA DE SELEÇÃO DE ATIVIDADE OUTDOOR -->
@@ -653,6 +688,9 @@
                 <button class="nav-btn text-white hover:text-white flex flex-col items-center space-y-1"
                     data-target="evolutionScreen"><i data-feather="trending-up"></i><span
                         class="text-xs font-semibold">PROGRESSO</span></button>
+                <button class="nav-btn text-white hover:text-white flex flex-col items-center space-y-1"
+                    data-target="musicScreen"><i data-feather="music"></i><span
+                        class="text-xs font-semibold">MÚSICA</span></button>
             </div>
         </footer>
     </div>

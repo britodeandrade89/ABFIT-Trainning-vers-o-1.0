@@ -45,7 +45,7 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
     background-color: #000000;
     background-image: linear-gradient(to bottom, #000000, #991b1b);
     background-attachment: fixed;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-overflow-scrolling: touch;
 }
 
@@ -55,18 +55,22 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
 
 .screen-enter-from-right {
     transform: translateX(100%);
+    opacity: 0;
 }
 
 .screen-exit-to-left {
     transform: translateX(-100%);
+    opacity: 0;
 }
 
 .screen-enter-from-left {
     transform: translateX(-100%);
+    opacity: 0;
 }
 
 .screen-exit-to-right {
     transform: translateX(100%);
+    opacity: 0;
 }
 
 #splashScreen {
@@ -431,4 +435,59 @@ p, label, h1, h2, h3, h4, h5, h6, div, button, option, select, input {
 
 .workout-badge-B {
     background-color: #10b981; /* green-500 */
+}
+
+/* === ESTILOS PLAYER DE MÚSICA === */
+.music-service-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem; /* space-x-3 */
+    padding: 1rem; /* p-4 */
+    border-radius: 0.75rem; /* rounded-xl */
+    font-weight: 600; /* font-semibold */
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #374151; /* gray-700 */
+}
+.music-service-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.music-service-btn i {
+    font-size: 1.5rem; /* text-2xl */
+}
+
+/* Specific button styles */
+button[data-service="spotify"] {
+    background-color: #1DB954;
+    color: white !important;
+}
+button[data-service="youtube-music"] {
+    background-color: #FF0000;
+    color: white !important;
+}
+button[data-service="deezer"] {
+    background-color: #00C7F2;
+    color: white !important;
+}
+
+#music-player-container iframe {
+    border: 1px solid #374151; /* gray-700 */
+}
+
+/* === Animation & Interaction Enhancements === */
+
+/* Adds a subtle "press" effect to interactive elements for better feedback. */
+button:active,
+.aluno-card:active,
+.exercise-library-card:active,
+.exercise-card:active,
+.running-session-card:active {
+    transform: scale(0.97);
+}
+
+/* Ensure non-button clickable elements have a base transition for smooth hover and active effects */
+.exercise-card,
+.running-session-card {
+    transition: background-color 0.2s ease-in-out, transform 0.15s ease-in-out;
 }
