@@ -615,42 +615,9 @@ function renderTrainingHistory(email) {
     const container = document.getElementById('training-history-container');
     container.innerHTML = '';
 
-    const treinosA = database.trainingPlans.treinosA[email] || [];
-    const treinosB = database.trainingPlans.treinosB[email] || [];
-    
-    // Fix: Explicitly typed `allCheckInsByDate` to resolve 'property does not exist on type unknown' errors when accessing properties `A` and `B`.
-    const allCheckInsByDate: Record<string, { A: Set<string>, B: Set<string> }> = {};
+    const userCompletedWorkouts = (database.completedWorkouts || []).filter(w => w.email === email);
 
-    treinosA.forEach(ex => {
-        (ex.checkIns || []).forEach(date => {
-            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
-            allCheckInsByDate[date].A.add(ex.name);
-        });
-    });
-    
-    treinosB.forEach(ex => {
-        (ex.checkIns || []).forEach(date => {
-            if (!allCheckInsByDate[date]) allCheckInsByDate[date] = { A: new Set(), B: new Set() };
-            allCheckInsByDate[date].B.add(ex.name);
-        });
-    });
-
-    const completedWorkouts = Object.entries(allCheckInsByDate)
-        .map(([date, sets]) => {
-            const completed = [];
-            // A workout is considered complete only if all its exercises are checked in.
-            if (treinosA.length > 0 && sets.A.size === treinosA.length) {
-                completed.push('A');
-            }
-            if (treinosB.length > 0 && sets.B.size === treinosB.length) {
-                completed.push('B');
-            }
-            return { date, workouts: completed };
-        })
-        .filter(entry => entry.workouts.length > 0)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    if (completedWorkouts.length === 0) {
+    if (userCompletedWorkouts.length === 0) {
         container.innerHTML = `
             <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
@@ -659,24 +626,39 @@ function renderTrainingHistory(email) {
         `;
         return;
     }
-    
+
+    // Group workouts by date
+    const workoutsByDate = userCompletedWorkouts.reduce((acc, workout) => {
+        const date = workout.date;
+        if (!acc[date]) {
+            acc[date] = [];
+        }
+        acc[date].push({ type: workout.type, duration: workout.duration });
+        return acc;
+    }, {});
+
+    const sortedDates = Object.keys(workoutsByDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
     let listHtml = `
         <h3 class="text-xl font-bold text-white mb-4">Histórico de Treinos</h3>
         <div class="space-y-2">
     `;
 
-    completedWorkouts.slice(0, 10).forEach(entry => { // Show last 10 workouts
-        const dateObj = new Date(entry.date);
+    sortedDates.slice(0, 10).forEach(date => { // Show last 10 workout dates
+        const dateObj = new Date(date);
         const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC' });
-        
-        const workoutBadges = entry.workouts.map(type => 
-            `<span class="workout-badge workout-badge-${type}">Treino ${type}</span>`
-        ).join(' ');
+
+        const workoutBadges = workoutsByDate[date].map(w => {
+            const minutes = Math.floor(w.duration / 60);
+            const seconds = w.duration % 60;
+            const durationStr = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+            return `<span class="workout-badge workout-badge-${w.type}">Treino ${w.type} (${durationStr})</span>`;
+        }).join(' ');
 
         listHtml += `
             <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border-l-4 border-gray-600">
                 <span class="font-semibold text-sm capitalize">${formattedDate}</span>
-                <div class="flex gap-2">${workoutBadges}</div>
+                <div class="flex gap-2 flex-wrap justify-end">${workoutBadges}</div>
             </div>
         `;
     });
@@ -840,7 +822,7 @@ function renderTrainingScreen(email, trainingType) {
                 <img src="${ex.img || 'https://via.placeholder.com/100x100/4b5563/FFFFFF?text=SEM+IMG'}" alt="thumbnail" class="exercise-thumbnail">
                 <div class="flex-grow">
                     <h3 class="font-bold text-md">${ex.name}</h3>
-                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Rec: ${ex.recovery}</p>
+                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Carga: ${ex.carga} kg | Rec: ${ex.recovery}</p>
                 </div>
                 <input type="checkbox" class="exercise-checkbox flex-shrink-0 w-6 h-6 rounded-md border-2 border-gray-600 bg-gray-700 focus:ring-0" ${isChecked ? 'checked' : ''}>
             </div>
