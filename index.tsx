@@ -1,8 +1,11 @@
-
 // Fix: Add declarations for external libraries to prevent TypeScript errors.
 declare var feather: any;
 declare var L: any;
 declare var Chart: any;
+
+let workoutTimerInterval: number | null = null;
+let workoutStartTime: Date | null = null;
+
 
 // --- DATABASE ---
 const database = {
@@ -20,7 +23,8 @@ const database = {
         treinosB: {},
         periodizacao: {}
     },
-    userRunningWorkouts: {}
+    userRunningWorkouts: {},
+    completedWorkouts: {}
 };
 
 // --- SISTEMA DE AVALIAção FÍSICA ---
@@ -113,6 +117,9 @@ function initializeDatabase() {
     const savedDB = JSON.parse(localStorage.getItem(STORAGE_KEYS.DATABASE));
     if (savedDB) {
         Object.assign(database, savedDB);
+        if (!database.completedWorkouts) {
+            database.completedWorkouts = {};
+        }
         console.log('Dados carregados do armazenamento local');
         return;
     }
@@ -607,6 +614,7 @@ function renderTrainingHistory(email) {
 
     const treinosA = database.trainingPlans.treinosA[email] || [];
     const treinosB = database.trainingPlans.treinosB[email] || [];
+    const userCompletedWorkouts = database.completedWorkouts ? (database.completedWorkouts[email] || []) : [];
     
     // Fix: Explicitly typed `allCheckInsByDate` to resolve 'property does not exist on type unknown' errors when accessing properties `A` and `B`.
     const allCheckInsByDate: Record<string, { A: Set<string>, B: Set<string> }> = {};
@@ -659,9 +667,16 @@ function renderTrainingHistory(email) {
         const dateObj = new Date(entry.date);
         const formattedDate = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'UTC' });
         
-        const workoutBadges = entry.workouts.map(type => 
-            `<span class="workout-badge workout-badge-${type}">Treino ${type}</span>`
-        ).join(' ');
+        const workoutBadges = entry.workouts.map(type => {
+            const completedWorkout = userCompletedWorkouts.find(w => w.date === entry.date && w.type === type);
+            let durationText = '';
+            if (completedWorkout && completedWorkout.duration > 0) {
+                const minutes = Math.floor(completedWorkout.duration / 60);
+                const seconds = completedWorkout.duration % 60;
+                durationText = ` - ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+            return `<span class="workout-badge workout-badge-${type}">Treino ${type}${durationText}</span>`
+        }).join(' ');
 
         listHtml += `
             <div class="bg-gray-800 p-3 rounded-lg flex justify-between items-center border-l-4 border-gray-600">
@@ -798,6 +813,23 @@ function renderTrainingScreen(email, trainingType) {
     contentWrapper.parentNode.replaceChild(newContentWrapper, contentWrapper);
     contentWrapper = newContentWrapper;
 
+    if (workoutTimerInterval) {
+        clearInterval(workoutTimerInterval);
+    }
+    workoutStartTime = new Date();
+    const timerEl = document.getElementById('workout-timer');
+    if (timerEl) timerEl.textContent = '00:00:00';
+
+    workoutTimerInterval = window.setInterval(() => {
+        if (!workoutStartTime || !timerEl) return;
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - workoutStartTime.getTime()) / 1000);
+        const hours = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+        const seconds = String(elapsed % 60).padStart(2, '0');
+        timerEl.textContent = `${hours}:${minutes}:${seconds}`;
+    }, 1000);
+
     const treinos = trainingType === 'A' ? database.trainingPlans.treinosA[email] : database.trainingPlans.treinosB[email];
     const processedExercises = processExercises(treinos, email);
     
@@ -813,7 +845,7 @@ function renderTrainingScreen(email, trainingType) {
                 <img src="${ex.img || 'https://via.placeholder.com/100x100/4b5563/FFFFFF?text=SEM+IMG'}" alt="thumbnail" class="exercise-thumbnail">
                 <div class="flex-grow">
                     <h3 class="font-bold text-md">${ex.name}</h3>
-                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Rec: ${ex.recovery}</p>
+                    <p class="text-sm">Séries: ${ex.sets} | Reps: ${ex.reps} | Carga: ${ex.carga} kg</p>
                 </div>
                 <input type="checkbox" class="exercise-checkbox flex-shrink-0 w-6 h-6 rounded-md border-2 border-gray-600 bg-gray-700 focus:ring-0" ${isChecked ? 'checked' : ''}>
             </div>
@@ -854,14 +886,30 @@ function renderTrainingScreen(email, trainingType) {
     });
 
     const saveBtnClickHandler = () => {
-        // Data is already saved by handleExerciseCheckIn
+        if (workoutTimerInterval) {
+            clearInterval(workoutTimerInterval);
+            const endTime = new Date();
+            const durationInSeconds = workoutStartTime ? Math.round((endTime.getTime() - workoutStartTime.getTime()) / 1000) : 0;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (!database.completedWorkouts) database.completedWorkouts = {};
+            if (!database.completedWorkouts[email]) database.completedWorkouts[email] = [];
+
+            const existingEntryIndex = database.completedWorkouts[email].findIndex(w => w.date === today && w.type === trainingType);
+            if (existingEntryIndex > -1) {
+                database.completedWorkouts[email][existingEntryIndex].duration = durationInSeconds;
+            } else {
+                database.completedWorkouts[email].push({ date: today, type: trainingType, duration: durationInSeconds });
+            }
+            workoutTimerInterval = null;
+            workoutStartTime = null;
+        }
+
         alert('Treino concluído e salvo com sucesso!');
         
-        // Refresh calendar and history on the profile screen before transitioning
         renderCalendar(email);
         renderTrainingHistory(email);
 
-        // Navigate back to profile
         const currentScreen = document.getElementById('trainingScreen');
         const targetScreen = document.getElementById('studentProfileScreen');
         transitionScreen(currentScreen, targetScreen, 'left');

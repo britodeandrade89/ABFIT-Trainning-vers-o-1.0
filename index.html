@@ -35,8 +35,8 @@
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
     <!-- Chart.js for graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Leaflet.js for GPS Tracking -->
@@ -153,7 +153,10 @@
                 <header class="flex items-center justify-between pt-6 pb-4">
                     <button class="back-btn p-2 rounded-full hover:bg-gray-800" data-target="studentProfileScreen"><i
                             data-feather="arrow-left" class="text-white"></i></button>
-                    <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
+                    <div class="text-center">
+                        <h1 id="training-title" class="text-2xl font-bold text-white">Treino</h1>
+                        <div id="workout-timer" class="text-lg font-mono text-yellow-400">00:00:00</div>
+                    </div>
                     <button id="save-training-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
                         <i data-feather="check-circle" class="w-4 h-4"></i>
                         <span>Concluir</span>
@@ -564,340 +567,222 @@
                     <button
                         class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
                         data-activity="Corrida outdoor">
-                        <i class="fas fa-running text-3xl text-blue-400"></i>
+                        <i class="fas fa-running text-3xl text-orange-400"></i>
                         <span class="font-semibold">Corrida</span>
                     </button>
                     <button
                         class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
-                        data-activity="Ciclismo Outdoor">
-                        <i class="fas fa-biking text-3xl text-blue-400"></i>
+                        data-activity="Ciclismo outdoor">
+                        <i class="fas fa-biking text-3xl text-green-400"></i>
                         <span class="font-semibold">Ciclismo</span>
                     </button>
                     <button
                         class="outdoor-activity-btn bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-xl p-4 flex flex-col items-center justify-center space-y-2 h-32 transition"
-                        data-activity="Remo Outdoor">
-                        <i class="fas fa-ship text-3xl text-blue-400"></i>
-                        <span class="font-semibold">Remo</span>
+                        data-activity="Natação outdoor">
+                        <i class="fas fa-swimmer text-3xl text-cyan-400"></i>
+                        <span class="font-semibold">Natação</span>
                     </button>
                 </div>
-                <button id="outdoorHistoryBtn"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition mt-6">
-                    <i class="fas fa-history"></i><span>Ver Histórico</span>
-                </button>
             </div>
 
-            <!-- TELA DO RASTREADOR GPS -->
-            <div id="outdoorTrackerScreen" class="screen p-6">
+            <!-- TELA DE RASTREAMENTO DE ATIVIDADE -->
+            <div id="outdoorTrackingScreen" class="screen p-6 flex flex-col">
                 <header class="flex items-center justify-between pt-6 pb-4">
                     <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
                         data-target="outdoorSelectionScreen"><i data-feather="arrow-left"
                             class="text-white"></i></button>
-                    <h1 id="outdoorActivityTitle" class="text-2xl font-bold text-white">Corrida</h1>
+                    <h1 id="tracking-activity-title" class="text-2xl font-bold text-white">Atividade</h1>
                     <div class="w-10"></div>
                 </header>
-                <div id="outdoorMap" class="map-container mb-4"></div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Tempo</h2>
-                        <p id="outdoorTime" class="text-xl font-bold text-white">00:00:00</p>
+                <div class="map-container mb-4" id="map"></div>
+                <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                    <div class="bg-gray-800 p-4 rounded-xl">
+                        <div class="text-sm">Distância</div>
+                        <div id="tracking-distance" class="text-2xl font-bold">0.00 km</div>
                     </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Distância</h2>
-                        <p id="outdoorDistance" class="text-xl font-bold text-white">0.00 km</p>
+                    <div class="bg-gray-800 p-4 rounded-xl">
+                        <div class="text-sm">Tempo</div>
+                        <div id="tracking-time" class="text-2xl font-bold">00:00:00</div>
                     </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Ritmo</h2>
-                        <p id="outdoorPace" class="text-xl font-bold text-white">--:-- /km</p>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Velocidade</h2>
-                        <p id="outdoorSpeed" class="text-xl font-bold text-white">0.0 km/h</p>
+                    <div class="bg-gray-800 p-4 rounded-xl">
+                        <div class="text-sm">Ritmo</div>
+                        <div id="tracking-pace" class="text-2xl font-bold">--:-- /km</div>
                     </div>
                 </div>
-                <div id="outdoorExtraMetrics" class="grid grid-cols-2 gap-3 mb-4" style="display: none;">
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Ritmo Médio</h2>
-                        <p id="outdoorAvgPace" class="text-xl font-bold text-white">--:-- /km</p>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Veloc. Média</h2>
-                        <p id="outdoorAvgSpeed" class="text-xl font-bold text-white">0.0 km/h</p>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Elevação</h2>
-                        <p id="outdoorElevation" class="text-xl font-bold text-white">0 m</p>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg text-center">
-                        <h2 class="text-sm text-white">Sens. Térmica</h2>
-                        <p id="outdoorFeelsLikeTemp" class="text-xl font-bold text-white">-- °C</p>
-                    </div>
-                </div>
-                <div class="space-y-3">
-                    <button id="outdoorStartBtn"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition"><i
-                            class="fas fa-play"></i><span>Iniciar</span></button>
-                    <button id="outdoorStopBtn"
-                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition disabled:opacity-50"
-                        disabled><i class="fas fa-stop"></i><span>Finalizar</span></button>
+                <div class="mt-auto flex items-center justify-center space-x-4 pb-24">
+                    <button id="start-tracking-btn"
+                        class="w-20 h-20 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center text-lg font-bold">
+                        <i data-feather="play" class="w-8 h-8"></i>
+                    </button>
+                    <button id="pause-tracking-btn"
+                        class="hidden w-20 h-20 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full items-center justify-center text-lg font-bold">
+                        <i data-feather="pause" class="w-8 h-8"></i>
+                    </button>
+                    <button id="stop-tracking-btn"
+                        class="hidden w-20 h-20 bg-red-600 hover:bg-red-700 text-white rounded-full items-center justify-center text-lg font-bold">
+                        <i data-feather="square" class="w-8 h-8"></i>
+                    </button>
                 </div>
             </div>
-
-            <!-- TELA DE HISTÓRICO OUTDOOR -->
-            <div id="outdoorHistoryScreen" class="screen p-6">
-                <header class="flex items-center justify-between pt-6 pb-4">
-                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
-                        data-target="outdoorSelectionScreen"><i data-feather="arrow-left"
-                            class="text-white"></i></button>
-                    <h1 class="text-2xl font-bold text-white">Histórico Outdoor</h1>
-                    <div class="w-10"></div>
-                </header>
-                <div id="outdoorHistoryList" class="space-y-3 pb-24">
-                    <!-- Histórico será inserido aqui -->
-                </div>
-            </div>
-
-            <!-- TELA DE DETALHES DO TREINO OUTDOOR -->
-            <div id="outdoorDetailScreen" class="screen p-6">
-                <header class="flex items-center justify-between pt-6 pb-4">
-                    <button class="outdoor-back-btn p-2 rounded-full hover:bg-gray-800"
-                        data-target="outdoorHistoryScreen"><i data-feather="arrow-left"
-                            class="text-white"></i></button>
-                    <h1 id="outdoorDetailTitle" class="text-2xl font-bold text-white">Detalhes</h1>
-                    <div class="w-10"></div>
-                </header>
-                <div class="pb-24 space-y-4">
-                    <div id="outdoorDetailMap" class="map-container"></div>
-                    <img id="outdoorDetailPhoto" src="" alt="Foto do Treino" class="w-full rounded-lg object-cover"
-                        style="display: none;" />
-                    <div id="outdoorDetailStats" class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
-                        <!-- Detalhes do treino aqui -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- ======================= FIM DAS TELAS DE RASTREAMENTO OUTDOOR ======================= -->
-
         </main>
 
-        <!-- ======================= BOTTOM NAVIGATION ======================= -->
-        <footer id="bottom-nav" class="flex-shrink-0 border-t border-gray-700">
-            <div class="flex justify-around items-center h-20">
-                <button class="nav-btn text-red-500 flex flex-col items-center space-y-1"
-                    data-target="studentProfileScreen"><i data-feather="home"></i><span
-                        class="text-xs font-semibold">INÍCIO</span></button>
-                <button class="nav-btn text-white hover:text-white flex flex-col items-center space-y-1"
-                    data-target="evolutionScreen"><i data-feather="trending-up"></i><span
-                        class="text-xs font-semibold">PROGRESSO</span></button>
-                <button class="nav-btn text-white hover:text-white flex flex-col items-center space-y-1"
-                    data-target="musicScreen"><i data-feather="music"></i><span
-                        class="text-xs font-semibold">MÚSICA</span></button>
+        <!-- ======================= BARRA DE NAVEGAÇÃO INFERIOR ======================= -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-black/70 backdrop-blur-sm border-t border-gray-700 p-2 z-50">
+            <div class="flex justify-around items-center">
+                <button class="nav-btn text-red-500" data-target="studentProfileScreen">
+                    <i data-feather="home"></i>
+                    <span class="text-xs">Início</span>
+                </button>
+                <button class="nav-btn text-white" data-target="evolutionScreen">
+                    <i data-feather="trending-up"></i>
+                    <span class="text-xs">Evolução</span>
+                </button>
+                <button class="nav-btn text-white" data-target="musicScreen">
+                    <i data-feather="music"></i>
+                    <span class="text-xs">Música</span>
+                </button>
+                <button class="nav-btn text-white" data-target="physioAssessmentScreen">
+                    <i data-feather="clipboard"></i>
+                    <span class="text-xs">Avaliação</span>
+                </button>
             </div>
-        </footer>
+        </nav>
     </div>
 
     <!-- ======================= MODAIS ======================= -->
-    <div class="offline-indicator" id="offlineIndicator">🔴 OFFLINE</div>
-
-    <div id="exerciseDetailModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="exercise-modal-content">
-            <button id="closeExerciseModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
-            <div id="exercise-modal-body">
-                <!-- Content is now dynamic for editing -->
-                <img id="modal-exercise-img" src="" alt="Exercise Image" class="w-full h-40 object-cover rounded-lg mb-4 bg-gray-700">
-                <h3 id="modal-exercise-name" class="text-2xl font-bold mb-4 text-white">Exercise Name</h3>
-
-                <div id="modal-exercise-method" class="mb-4 p-3 bg-gray-900 rounded-lg border border-gray-700">
-                    <h4 class="font-semibold text-sm text-blue-400 mb-1">Método de Treino Atual</h4>
-                    <p class="text-white text-sm"></p>
+    <!-- Modal Detalhes do Exercício -->
+    <div id="exerciseDetailModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+        <div id="exercise-modal-content" class="bg-gray-900 rounded-xl max-w-md w-11/12 transform scale-95 opacity-0 transition-transform transition-opacity duration-300 border border-gray-700">
+            <header class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h2 id="modal-exercise-name" class="text-lg font-bold">Nome do Exercício</h2>
+                <button id="closeExerciseModalBtn" class="p-2 rounded-full hover:bg-gray-800"><i data-feather="x"></i></button>
+            </header>
+            <div id="exercise-modal-body" class="p-4">
+                <img id="modal-exercise-img" src="" alt="Imagem do exercício" class="w-full h-48 object-cover rounded-lg mb-4 bg-gray-700">
+                <div id="modal-exercise-method" class="bg-gray-800 p-3 rounded-lg mb-4">
+                    <h3 class="font-bold text-sm mb-1">Método de Execução</h3>
+                    <p class="text-sm">--</p>
                 </div>
-                
                 <form id="edit-carga-form">
-                    <div class="mb-4">
-                        <label for="carga-input" class="block text-sm font-medium text-white mb-2">Carga Atual (kg)</label>
-                        <input type="number" step="0.5" id="carga-input" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 50.5">
+                    <label for="carga-input" class="block text-sm font-medium mb-1">Registrar Carga (kg)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" step="0.5" id="carga-input" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 25.5">
+                        <button type="submit" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Salvar</button>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
-                        <i data-feather="save"></i> <span>Salvar Nova Carga</span>
+                </form>
+                <div class="mt-4">
+                    <h3 class="font-bold text-sm mb-2">Histórico de Carga</h3>
+                    <div id="carga-history-list" class="space-y-2 max-h-32 overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+     <!-- Modal Registro de Corrida -->
+    <div id="runningLogModal" class="fixed inset-0 bg-black/70 flex items-center justify-center hidden z-50">
+        <div id="running-log-modal-content" class="bg-gray-900 rounded-xl max-w-md w-11/11 transform scale-95 opacity-0 transition-transform transition-opacity duration-300 border border-gray-700">
+            <header class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h2 id="running-log-date" class="text-lg font-bold">Registrar Corrida</h2>
+                <button id="closeRunningLogModalBtn" class="p-2 rounded-full hover:bg-gray-800"><i data-feather="x"></i></button>
+            </header>
+            <div class="p-4 space-y-4">
+                 <form id="running-log-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="running-distance" class="block text-sm font-medium mb-1">Distância (km)</label>
+                            <input type="text" id="running-distance" inputmode="decimal" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 5,5">
+                        </div>
+                        <div>
+                            <label for="running-time" class="block text-sm font-medium mb-1">Tempo (min)</label>
+                            <input type="text" id="running-time" inputmode="decimal" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 30,5">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2">
+                        <i data-feather="save"></i> <span>Salvar Registro</span>
                     </button>
                 </form>
-    
-                <div class="mt-6">
-                    <h4 class="text-lg font-semibold mb-2 text-white">Histórico de Carga</h4>
-                    <div id="carga-history-list" class="space-y-2 max-h-32 overflow-y-auto">
-                        <!-- History will be populated here -->
+
+                <div class="bg-gray-800 p-4 rounded-lg">
+                    <h3 class="font-bold text-center mb-3">Resumo da Performance</h3>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div>
+                            <span class="font-semibold opacity-80">Velocidade Média</span>
+                            <p class="font-bold text-lg"><span id="summary-speed">0.0</span> km/h</p>
+                        </div>
+                        <div>
+                            <span class="font-semibold opacity-80">Pace Médio</span>
+                            <p class="font-bold text-lg"><span id="summary-pace">--:--</span> /km</p>
+                        </div>
+                        <div>
+                            <span class="font-semibold opacity-80">Calorias (Est.)</span>
+                            <p class="font-bold text-lg"><span id="summary-calories">0</span> kcal</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Modal de Registro de Corrida -->
-    <div id="runningLogModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="running-log-modal-content">
-            <button id="closeRunningLogModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
-            <h3 class="text-2xl font-bold mb-2 text-white">Registrar Corrida</h3>
-            <p id="running-log-date" class="text-sm mb-4"></p>
-            <form id="running-log-form">
-                <div class="grid grid-cols-2 gap-4 mb-4">
+     <!-- Modal Adicionar Aluno (Avaliação Física) -->
+    <div id="modal-add-aluno" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div id="modal-add-aluno-content"
+            class="bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg transform scale-95 opacity-0 transition-all duration-300 border border-gray-700">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-white mb-6">Cadastrar Novo Aluno</h2>
+                <form id="form-novo-aluno" class="space-y-4">
                     <div>
-                        <label for="running-distance" class="block text-sm font-medium text-white mb-2">Distância (km)</label>
-                        <input type="text" id="running-distance" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 5,25" required>
+                        <label for="nome-aluno" class="block text-sm font-medium text-white mb-1">Nome Completo</label>
+                        <input type="text" id="nome-aluno" required
+                            class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
-                        <label for="running-time" class="block text-sm font-medium text-white mb-2">Tempo (minutos)</label>
-                        <input type="text" id="running-time" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 30" required>
+                        <label for="sexo-aluno" class="block text-sm font-medium text-white mb-1">Sexo</label>
+                        <select id="sexo-aluno" required
+                            class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                        </select>
                     </div>
-                </div>
-                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
-                    <i data-feather="save"></i> <span>Salvar Treino</span>
-                </button>
-            </form>
-            <div class="mt-6 border-t border-gray-700 pt-4">
-                 <h4 class="text-lg font-semibold mb-2 text-white">Resumo do Desempenho</h4>
-                 <div id="running-performance-summary" class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-gray-700 p-3 rounded-lg">
-                        <span class="text-xs">Ritmo Médio</span>
-                        <p id="summary-pace" class="font-bold text-xl">--:--</p>
-                        <span class="text-xs">/km</span>
+                    <div>
+                        <label for="nascimento-aluno" class="block text-sm font-medium text-white mb-1">Data de Nascimento</label>
+                        <input type="date" id="nascimento-aluno" required
+                            class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div class="bg-gray-700 p-3 rounded-lg">
-                        <span class="text-xs">Veloc. Média</span>
-                        <p id="summary-speed" class="font-bold text-xl">0.0</p>
-                        <span class="text-xs">km/h</span>
+                    <div class="pt-6 flex justify-end space-x-4">
+                        <button type="button" id="btn-cancel-modal"
+                            class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition">Cancelar</button>
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">Salvar
+                            Aluno</button>
                     </div>
-                     <div class="bg-gray-700 p-3 rounded-lg col-span-2">
-                        <span class="text-xs">Gasto Calórico Estimado</span>
-                        <p id="summary-calories" class="font-bold text-xl">0</p>
-                        <span class="text-xs">kcal</span>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
-
-
-    <!-- Modal de Registro de Refeição -->
-    <div id="mealLogModal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md p-6 relative" id="meal-log-modal-content">
-            <button id="closeMealLogModalBtn" class="absolute top-4 right-4 text-white hover:text-white"><i data-feather="x"></i></button>
-            <h3 class="text-2xl font-bold mb-4 text-white">Registrar Refeição</h3>
-            <form id="meal-log-form">
-                <div class="mb-4">
-                    <label for="meal-type" class="block text-sm font-medium text-white mb-2">Tipo de Refeição</label>
-                    <select id="meal-type" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg">
-                        <option>Café da Manhã</option>
-                        <option>Almoço</option>
-                        <option>Jantar</option>
-                        <option>Lanche</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="meal-description" class="block text-sm font-medium text-white mb-2">O que você comeu?</label>
-                    <textarea id="meal-description" rows="4" class="w-full p-3 border border-gray-600 bg-gray-700 text-white rounded-lg" placeholder="Ex: 1 filé de frango grelhado (150g), 1 xícara de arroz branco, salada de alface e tomate."></textarea>
-                </div>
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition">
-                    <i data-feather="cpu"></i> <span>Analisar e Adicionar</span>
-                </button>
-                <div id="meal-analysis-spinner" class="hidden text-center p-4">
-                    <div class="loader inline-block"></div>
-                    <p class="mt-2 text-white text-sm">Analisando refeição...</p>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal Câmera -->
-    <div id="cameraModal" class="modal fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex flex-col items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="camera-modal-title">
-        <div class="bg-gray-800 text-white rounded-2xl shadow-xl w-full max-w-md relative" id="camera-modal-content">
-            <h3 id="camera-modal-title" class="sr-only">Tirar foto do perfil</h3>
-            <video id="camera-stream" class="w-full rounded-t-2xl" autoplay playsinline></video>
+    
+     <!-- Modal da Câmera -->
+    <div id="cameraModal"
+        class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
+        <div class="relative w-full max-w-lg h-auto aspect-square">
+            <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover rounded-lg"></video>
             <canvas id="camera-canvas" class="hidden"></canvas>
-            <div class="p-4 flex flex-col items-center">
-                <button id="capture-photo-btn" aria-label="Tirar foto" class="w-16 h-16 bg-white rounded-full border-4 border-gray-500 hover:bg-gray-200 transition mb-2"></button>
-                <button id="close-camera-modal-btn" aria-label="Fechar câmera" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-xl transition">Cancelar</button>
-            </div>
+        </div>
+        <div class="flex items-center justify-center space-x-4 mt-4">
+            <button id="close-camera-modal-btn"
+                class="bg-gray-700 hover:bg-gray-600 text-white p-4 rounded-full">
+                <i class="fas fa-times"></i>
+            </button>
+            <button id="capture-photo-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white w-20 h-20 rounded-full border-4 border-white">
+                <i class="fas fa-camera text-2xl"></i>
+            </button>
+            <div class="w-16"></div> <!-- Espaçador -->
         </div>
     </div>
 
-    <!-- Modal Adicionar Aluno (Avaliação Física) -->
-    <div id="modal-add-aluno" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-95 opacity-0"
-            id="modal-add-aluno-content">
-            <h3 class="text-2xl font-bold mb-6 text-white">Novo Aluno</h3>
-            <form id="form-novo-aluno">
-                <div class="mb-4">
-                    <label for="nome-aluno" class="block text-sm font-medium text-white">Nome Completo</label>
-                    <input type="text" id="nome-aluno" required
-                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="mb-4">
-                    <label for="sexo-aluno" class="block text-sm font-medium text-white">Sexo</label>
-                    <select id="sexo-aluno" required
-                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <option value="Masculino">Masculino</option>
-                        <option value="Feminino">Feminino</option>
-                    </select>
-                </div>
-                <div class="mb-6">
-                    <label for="nascimento-aluno" class="block text-sm font-medium text-white">Data de
-                        Nascimento</label>
-                    <input type="date" id="nascimento-aluno" required
-                        class="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="flex justify-end space-x-4">
-                    <button type="button" id="btn-cancel-modal"
-                        class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
-                    <button type="submit" id="btn-salvar-aluno"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"><i
-                            class="fas fa-save mr-2"></i>Salvar Aluno</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- Modal de Resumo do Treino Outdoor -->
-    <div id="outdoorSummaryModal"
-        class="modal fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
-        <div
-            class="modal-content bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 text-white transform opacity-0 scale-95">
-            <h2 class="text-2xl font-bold mb-4 text-center">Treino Finalizado!</h2>
-            <div id="outdoorSummaryStats" class="text-left mb-4 space-y-1">
-                <!-- Stats do resumo aqui -->
-            </div>
-            <div class="photo-upload">
-                <label for="outdoorPhotoInput"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition cursor-pointer">
-                    <i class="fas fa-camera"></i> <span>Adicionar uma foto</span>
-                </label>
-                <input type="file" id="outdoorPhotoInput" accept="image/*" class="hidden">
-                <img id="outdoorPhotoPreview" src="" alt="Prévia da foto" class="w-full rounded-lg mt-4 object-cover"
-                    style="display: none; max-height: 150px;" />
-            </div>
-            <div class="grid grid-cols-2 gap-4 mt-6">
-                <button id="outdoorSaveBtn"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center space-x-2 transition"><i
-                        class="fas fa-save"></i> <span>Salvar</span></button>
-                <button id="outdoorDiscardBtn"
-                    class="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition"><i
-                        class="fas fa-trash-alt"></i> <span>Descartar</span></button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('ServiceWorker registration failed: ', error);
-                    });
-            });
-        }
-    </script>
     <script type="module" src="index.tsx"></script>
+    <script src="service-worker.js"></script>
 </body>
 
 </html>
